@@ -2,22 +2,30 @@
 
 import * as React from 'react'
 import { motion } from 'framer-motion'
-import { Download, RotateCcw, ShieldAlert, FileText } from 'lucide-react'
+import { Download, RotateCcw, ShieldAlert, FileText, Brain, ChevronDown } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
 import { AnnotatedImage } from './annotated-image'
 import { RiskList } from './risk-list'
-import type { JobResult } from '@/lib/mock-data'
+import { TraceTimeline } from './trace-timeline'
+import type { JobResult, TraceEvent } from '@/lib/mock-data'
 
 interface ResultsViewProps {
   result: JobResult
+  events: TraceEvent[]
   onReset: () => void
 }
 
-export function ResultsView({ result, onReset }: ResultsViewProps) {
+export function ResultsView({ result, events, onReset }: ResultsViewProps) {
   const [selectedHazardId, setSelectedHazardId] = React.useState<string | null>(null)
+  const [traceOpen, setTraceOpen] = React.useState(false)
 
   const handleHazardClick = (id: string) => {
     setSelectedHazardId((prev) => (prev === id ? null : id))
@@ -139,6 +147,46 @@ export function ResultsView({ result, onReset }: ResultsViewProps) {
           selectedHazardId={selectedHazardId}
         />
       </div>
+
+      {/* Replay trace — expandable reasoning timeline */}
+      {events.length > 0 && (
+        <Collapsible
+          open={traceOpen}
+          onOpenChange={setTraceOpen}
+          className="rounded-xl border border-border/60 bg-card/50"
+        >
+          <CollapsibleTrigger asChild>
+            <button className="flex w-full items-center justify-between gap-3 px-6 py-4 text-left transition-colors hover:bg-muted/30">
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                  <Brain className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="font-mono text-sm font-semibold uppercase tracking-wide text-foreground">
+                    Reasoning Trace
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Re-watch the agent&apos;s reasoning — {events.length} events from
+                    Nemotron 3 Ultra, VLM, and Tavily.
+                  </p>
+                </div>
+              </div>
+              <motion.div
+                animate={{ rotate: traceOpen ? 180 : 0 }}
+                transition={{ duration: 0.2 }}
+                className="text-muted-foreground"
+              >
+                <ChevronDown className="h-4 w-4" />
+              </motion.div>
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="border-t border-border/60 px-6 py-4">
+              <TraceTimeline events={events} isLive={false} />
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
     </motion.div>
   )
 }

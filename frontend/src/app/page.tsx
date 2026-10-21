@@ -225,7 +225,7 @@ export default function Home() {
 
         {view === 'results' && result && (
           <section className="container mx-auto max-w-6xl px-4 py-12">
-            <ResultsView result={result} onReset={handleReset} />
+            <ResultsView result={result} events={events} onReset={handleReset} />
           </section>
         )}
       </main>

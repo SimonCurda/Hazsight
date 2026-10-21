@@ -21,6 +21,31 @@ Every agent is **required** to prepend a new entry to the [Action History](#acti
 
 ## Action History
 
+### [2026-10-21 14:10] - QA cycle #2: Generated demo image + Reasoning Trace + critical .gitignore fix
+- **Agent**: Z.ai Code (15-min self-QA cron, job_id 470217)
+- **What**:
+  - Generated a real "messy warehouse" demo image via Image Generation skill (z-ai-web-dev-sdk CLI) — 1344x768 PNG at [`frontend/public/demo-warehouse.png`](frontend/public/demo-warehouse.png) (122KB). The image depicts a warehouse with the exact hazards the mock data describes: stacked cardboard boxes blocking red emergency exit door (right), electric space heater with cardboard nearby (left), loose black power cable across floor (center foreground), industrial lighting.
+  - Updated [`frontend/src/lib/mock-data.ts`](frontend/src/lib/mock-data.ts): changed `MOCK_IMAGE_URL` from Unsplash placeholder URL to local `/demo-warehouse.png` (served by Next.js from /public/).
+  - Added "Reasoning Trace" expandable section to [`frontend/src/components/hazsight/results-view.tsx`](frontend/src/components/hazsight/results-view.tsx) — collapsible card at the bottom of results view that shows the full TraceTimeline (10 events from Nemotron 3 Ultra + VLM + Tavily) when expanded. Uses shadcn/ui Collapsible + Framer Motion for chevron rotation animation. Heading "Reasoning Trace" with Brain icon + subtitle "Re-watch the agent's reasoning — 10 events from Nemotron 3 Ultra, VLM, and Tavily."
+  - Updated [`frontend/src/app/page.tsx`](frontend/src/app/page.tsx) to pass `events` prop to ResultsView (so the trace can be replayed after results load).
+  - **CRITICAL FIX**: Fixed root [`.gitignore`](.gitignore) bug — the Python `lib/` pattern was matching `frontend/src/lib/` (containing mock-data.ts, types.ts, db.ts, utils.ts) and excluding it from git. Changed `lib/` to `/lib/` (and similar for `var/`, `wheels/`, `lib64/`) so they only match root-level Python dirs. This means 4 critical frontend files ([`frontend/src/lib/mock-data.ts`](frontend/src/lib/mock-data.ts), [`frontend/src/lib/types.ts`](frontend/src/lib/types.ts), [`frontend/src/lib/db.ts`](frontend/src/lib/db.ts), [`frontend/src/lib/utils.ts`](frontend/src/lib/utils.ts)) are now properly tracked — without this fix, anyone who pulled the repo wouldn't have these files and the frontend would not build.
+- **Where**:
+  - [`frontend/public/demo-warehouse.png`](frontend/public/demo-warehouse.png) (NEW, 122KB, generated image)
+  - [`frontend/src/lib/mock-data.ts`](frontend/src/lib/mock-data.ts) (MOCK_IMAGE_URL changed to local path)
+  - [`frontend/src/components/hazsight/results-view.tsx`](frontend/src/components/hazsight/results-view.tsx) (+54 lines: Collapsible + Reasoning Trace section)
+  - [`frontend/src/app/page.tsx`](frontend/src/app/page.tsx) (+1 line: pass events prop)
+  - [`.gitignore`](.gitignore) (8 lines changed: lib/ -> /lib/, lib64/ -> /lib64/, var/ -> /var/, wheels/ -> /wheels/)
+  - [`frontend/src/lib/mock-data.ts`](frontend/src/lib/mock-data.ts), [`frontend/src/lib/types.ts`](frontend/src/lib/types.ts), [`frontend/src/lib/db.ts`](frontend/src/lib/db.ts), [`frontend/src/lib/utils.ts`](frontend/src/lib/utils.ts) (NEW — previously ignored by the lib/ bug)
+- **Why**:
+  - The Unsplash placeholder was generic — judges couldn't tell if the hazards matched the analysis. The new generated image shows actual hazards (blocked exit, flammable near heater, cable on floor) that match the mock data exactly. Demo is more compelling and credible.
+  - "Replay trace" feature was on the QA cycle 1 backlog — judges might want to re-watch the agent reasoning after the fact. Now they can expand the Reasoning Trace section in the results view.
+  - The .gitignore bug was silently breaking the repo — anyone who cloned the repo couldn't build the frontend because lib/ files were missing. Critical to fix before team tries to pull + run.
+- **Verification**:
+  - Ran `bun run lint` — passes with 0 errors.
+  - Tested via agent-browser: clicked "Try with a demo image" -> processing view (12s) -> results view with new demo-warehouse.png image. Verified Reasoning Trace collapsible button at ref e50 (collapsed by default, expanded=true after click). Screenshot captured (535KB with trace expanded vs 430KB collapsed) confirming content is rendered.
+  - Verified `git diff --cached --stat` shows 8 files including the previously-ignored lib/ files.
+  - No console errors throughout.
+
 ### [2026-10-21 13:55] - QA cycle #1: Demo image button + empty state + safety score bar
 - **Agent**: Z.ai Code (15-min self-QA cron, job_id 470217)
 - **What**:
