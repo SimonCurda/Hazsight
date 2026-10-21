@@ -21,6 +21,18 @@ Every agent is **required** to prepend a new entry to the [Action History](#acti
 
 ## Action History
 
+### [2026-10-21 18:25] - PDF report polish — darker badge colors + spaces instead of underscores + proper case headers
+- **Agent**: Z.ai Code (assisting Šimon Čurda — direct user request)
+- **What**:
+  - Fixed readability: changed badge background colors to darker shades so white text is readable (CRITICAL: red-600, HIGH: orange-600, MEDIUM: amber-600 was yellow/unreadable, LOW: emerald-600 was too light).
+  - Fixed score colors: darker red/orange/emerald for readability on white background.
+  - Replaced underscores with spaces in hazard categories: FIRE_SMOKE -> Fire / Smoke, SLIP_TRIP_FALL -> Slip / Trip / Fall, PPE_VIOLATION -> PPE Violation, UNAUTHORIZED_ZONE -> Unauthorized Zone. Added formatCategory() function + CATEGORY_LABELS dict.
+  - Changed table headers from ALL_CAPS to proper case: CATEGORY -> Category, SEVERITY -> Severity, DESCRIPTION -> Description, RECOMMENDATION -> Recommendation, CONF. -> Confidence.
+  - Widened Confidence column from 8% to 12% ("Confidence" is longer than "CONF.").
+- **Where**: [`frontend/src/lib/pdf-report.tsx`](frontend/src/lib/pdf-report.tsx)
+- **Why**: User feedback: "kdyz je tam zelenej nebo zlutej text na biliom pozadi tak to poradne nejde precist" + "polishnul aby tam byli mezery misto pomlcek"
+- **Verification**: Lint passes. curl test: POST /api/analyze -> job completed, GET /api/reports/{id} -> HTTP 200, 5527 bytes, %PDF (valid).
+
 ### [2026-10-21 17:55] - PDF report generation (Next.js @react-pdf/renderer) + job store globalThis fix + synchronous processing
 - **Agent**: Z.ai Code (assisting Šimon Čurda — direct user request)
 - **What**:

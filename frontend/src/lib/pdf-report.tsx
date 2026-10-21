@@ -28,18 +28,43 @@ import type { DetectedHazard } from './mock-data'
 
 // NVIDIA green brand color
 const BRAND = '#76b900'
-const SEVERITY_COLORS: Record<string, string> = {
-  CRITICAL: '#ef4444',
-  HIGH: '#f97316',
-  MEDIUM: '#facc15',
-  LOW: '#10b981',
+
+// Badge background colors (darker so white text is readable)
+const SEVERITY_BADGE_BG: Record<string, string> = {
+  CRITICAL: '#dc2626', // red-600 (darker)
+  HIGH: '#ea580c',     // orange-600 (darker)
+  MEDIUM: '#ca8a04',   // amber-600 (darker — was yellow, unreadable)
+  LOW: '#059669',      // emerald-600 (darker)
 }
 
-const SEVERITY_BG: Record<string, string> = {
-  CRITICAL: '#fef2f2',
-  HIGH: '#fff7ed',
-  MEDIUM: '#fefce8',
-  LOW: '#ecfdf5',
+// Badge text color — white for dark badges, dark for light
+const SEVERITY_BADGE_TEXT: Record<string, string> = {
+  CRITICAL: '#ffffff',
+  HIGH: '#ffffff',
+  MEDIUM: '#ffffff',
+  LOW: '#ffffff',
+}
+
+// Category labels — human-readable (spaces instead of underscores)
+const CATEGORY_LABELS: Record<string, string> = {
+  PPE_VIOLATION: 'PPE Violation',
+  FIRE_SMOKE: 'Fire / Smoke',
+  SLIP_TRIP_FALL: 'Slip / Trip / Fall',
+  UNAUTHORIZED_ZONE: 'Unauthorized Zone',
+  MACHINERY_PROXIMITY: 'Machinery Proximity',
+  UNSAFE_BEHAVIOR: 'Unsafe Behavior',
+  OTHER: 'Other',
+}
+
+function formatCategory(category: string): string {
+  return CATEGORY_LABELS[category] || category.replace(/_/g, ' ')
+}
+
+// Score colors — darker for readability on white background
+const SCORE_COLORS: Record<string, string> = {
+  CRITICAL: '#dc2626', // red-600
+  HIGH: '#ea580c',      // orange-600
+  LOW: '#059669',       // emerald-600
 }
 
 function riskLevel(score: number): string {
@@ -49,9 +74,9 @@ function riskLevel(score: number): string {
 }
 
 function scoreColor(score: number): string {
-  if (score < 40) return SEVERITY_COLORS.CRITICAL
-  if (score < 70) return SEVERITY_COLORS.HIGH
-  return SEVERITY_COLORS.LOW
+  if (score < 40) return SCORE_COLORS.CRITICAL
+  if (score < 70) return SCORE_COLORS.HIGH
+  return SCORE_COLORS.LOW
 }
 
 const styles = StyleSheet.create({
@@ -202,11 +227,11 @@ export function PdfReport({
   const color = scoreColor(score)
 
   const colWidths = {
-    category: '15%',
-    severity: '12%',
-    description: '35%',
+    category: '14%',
+    severity: '11%',
+    description: '33%',
     recommendation: '30%',
-    confidence: '8%',
+    confidence: '12%',
   }
 
   return (
@@ -254,11 +279,11 @@ export function PdfReport({
         <View>
           {/* Table header */}
           <View style={styles.tableHeader}>
-            <Text style={[styles.tableHeaderText, { width: colWidths.category }]}>CATEGORY</Text>
-            <Text style={[styles.tableHeaderText, { width: colWidths.severity }]}>SEVERITY</Text>
-            <Text style={[styles.tableHeaderText, { width: colWidths.description }]}>DESCRIPTION</Text>
-            <Text style={[styles.tableHeaderText, { width: colWidths.recommendation }]}>RECOMMENDATION</Text>
-            <Text style={[styles.tableHeaderText, { width: colWidths.confidence }]}>CONF.</Text>
+            <Text style={[styles.tableHeaderText, { width: colWidths.category }]}>Category</Text>
+            <Text style={[styles.tableHeaderText, { width: colWidths.severity }]}>Severity</Text>
+            <Text style={[styles.tableHeaderText, { width: colWidths.description }]}>Description</Text>
+            <Text style={[styles.tableHeaderText, { width: colWidths.recommendation }]}>Recommendation</Text>
+            <Text style={[styles.tableHeaderText, { width: colWidths.confidence }]}>Confidence</Text>
           </View>
           {/* Table rows */}
           {sortedHazards.map((hazard, idx) => (
@@ -267,13 +292,16 @@ export function PdfReport({
               style={[styles.tableRow, idx % 2 === 1 && styles.tableRowAlt]}
             >
               <Text style={[styles.tableCell, { width: colWidths.category }]}>
-                {hazard.category}
+                {formatCategory(hazard.category)}
               </Text>
               <View style={[styles.tableCell, { width: colWidths.severity }]}>
                 <Text
                   style={[
                     styles.badge,
-                    { backgroundColor: SEVERITY_COLORS[hazard.severity] || '#666' },
+                    {
+                      backgroundColor: SEVERITY_BADGE_BG[hazard.severity] || '#666',
+                      color: SEVERITY_BADGE_TEXT[hazard.severity] || '#fff',
+                    },
                   ]}
                 >
                   {hazard.severity}
