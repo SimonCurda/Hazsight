@@ -185,11 +185,11 @@ export default function Home() {
               className="flex items-center gap-2"
               aria-label="Hazsight home"
             >
-              <div className="flex h-7 w-7 items-center justify-center rounded border border-amber-500/60 bg-amber-500/10 text-amber-400 hazsight-glow-amber">
+              <div className="flex h-7 w-7 items-center justify-center rounded-md border border-amber-500/40 bg-amber-500/5 text-amber-400">
                 <AlertTriangle className="h-4 w-4" />
               </div>
-              <span className="hazsight-readout text-sm font-bold tracking-tight">
-                HAZSIGHT
+              <span className="text-sm font-semibold tracking-tight">
+                Hazsight
               </span>
               <span className="hazsight-readout text-[10px] text-muted-foreground">
                 v0.1.0
@@ -199,11 +199,11 @@ export default function Home() {
           <nav className="flex items-center gap-1">
             {view === 'landing' && (
               <>
-                <Button variant="ghost" size="sm" asChild className="hazsight-readout hidden text-xs sm:inline-flex">
-                  <Link href="#how-it-works">PROCESS</Link>
+                <Button variant="ghost" size="sm" asChild className="text-xs sm:inline-flex">
+                  <Link href="#how-it-works">Process</Link>
                 </Button>
-                <Button variant="ghost" size="sm" asChild className="hazsight-readout hidden text-xs sm:inline-flex">
-                  <Link href="#hazards">HAZARDS</Link>
+                <Button variant="ghost" size="sm" asChild className="text-xs sm:inline-flex">
+                  <Link href="#hazards">Hazards</Link>
                 </Button>
               </>
             )}
@@ -305,16 +305,16 @@ export default function Home() {
           <div className="flex flex-col items-start justify-between gap-6 md:flex-row">
             <div className="max-w-md">
               <div className="mb-2 flex items-center gap-2">
-                <div className="flex h-6 w-6 items-center justify-center rounded border border-amber-500/60 bg-amber-500/10 text-amber-400">
+                <div className="flex h-6 w-6 items-center justify-center rounded-md border border-amber-500/40 bg-amber-500/5 text-amber-400">
                   <AlertTriangle className="h-3.5 w-3.5" />
                 </div>
-                <span className="hazsight-readout text-sm font-bold">HAZSIGHT</span>
+                <span className="text-sm font-semibold">Hazsight</span>
                 <span className="hazsight-readout text-[10px] text-muted-foreground">
                   v0.1.0
                 </span>
               </div>
-              <p className="hazsight-readout text-xs leading-relaxed text-muted-foreground">
-                <span className="text-amber-400/70">{'// '}</span>
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                <span className="hazsight-readout text-amber-400/60">{'// '}</span>
                 AI safety inspector · NVIDIA Nemotron on Nebius Token Factory ·
                 Built by Team DAMR58H for Nebius x NVIDIA Global AI Hackathon.
               </p>
@@ -324,27 +324,27 @@ export default function Home() {
                 href="https://github.com/SimonCurda/Hazsight"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hazsight-readout flex items-center gap-2 text-muted-foreground transition-colors hover:text-amber-400"
+                className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-amber-400"
               >
                 <Github className="h-4 w-4" />
-                GITHUB_REPOSITORY
+                GitHub repository
                 <ExternalLink className="h-3 w-3" />
               </a>
               <a
                 href="https://nebiusglobalaihackathon.devpost.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hazsight-readout flex items-center gap-2 text-muted-foreground transition-colors hover:text-amber-400"
+                className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-amber-400"
               >
                 <ExternalLink className="h-4 w-4" />
-                HACKATHON_PAGE
+                Hackathon page
               </a>
             </div>
           </div>
           <div className="mt-8 border-t border-border/40 pt-6">
             <p className="hazsight-readout text-[10px] text-muted-foreground">
-              <span className="text-emerald-400">{'// compliance: '}</span>
-              MIT_LICENSED · RUNS_ON_NEBIUS_TOKEN_FACTORY · USES_NVIDIA_NEMOTRON_OPEN_SOURCE_MODELS · BEST_APPS_AND_AGENTS_TRACK
+              <span className="text-emerald-400/70">{'// Compliance: '}</span>
+              MIT licensed · Runs on Nebius Token Factory · Uses NVIDIA Nemotron open-source models · Best Apps &amp; Agents track
             </p>
           </div>
         </div>
