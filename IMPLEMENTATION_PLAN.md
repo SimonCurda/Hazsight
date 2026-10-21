@@ -11,7 +11,7 @@ Hazsight is designed to monitor camera feeds, identify risks and occupational sa
 
 - **Project Name**: Hazsight
 - **Goal**: Automated occupational health and safety (OHS/EHS) monitoring for industrial sites, construction areas, warehouses, and smart facilities using video feeds.
-- **Mandatory Constraint**: Must integrate at least one **NVIDIA AI technology**.
+- **Mandatory Constraint**: Must run on **Nebius Token Factory** (or Nebius AI Cloud) and use at least one **NVIDIA open-source model** (per Nebius x NVIDIA Global AI Hackathon rules).
 - **Key Deliverables**:
   1. Multimodal scene understanding (what is happening in the visual frame).
   2. Hazard & risk recognition (PPE compliance, fire/smoke, tripping hazards, hazardous machinery proximity, unauthorized zones).
@@ -21,21 +21,24 @@ Hazsight is designed to monitor camera feeds, identify risks and occupational sa
 
 ---
 
-## 2. NVIDIA AI Technologies Analysis
+## 2. NVIDIA AI Technologies via Nebius Token Factory
+
+> **Hackathon Compliance Note**: The Nebius x NVIDIA Global AI Hackathon requires all submissions to run on either **Nebius Token Factory** or **Nebius AI Cloud** and use at least one **NVIDIA open-source model**. All inference in Hazsight is therefore routed through Nebius Token Factory (OpenAI-compatible API at `https://api.tokenfactory.nebius.com/v1/`), which serves the NVIDIA Nemotron open-source model family plus NVIDIA-served VLMs (Llama 3.2 Vision, VILA, Cosmos).
 
 To satisfy the NVIDIA requirement while balancing flexibility, latency, and hardware constraints:
 
-| NVIDIA Technology | Service / Deployment Model | Key Benefits | Recommended Hazsight Role |
+| NVIDIA Technology (served via Nebius Token Factory) | Service / Deployment Model | Key Benefits | Recommended Hazsight Role |
 | :--- | :--- | :--- | :--- |
-| **NVIDIA NIM API (VLM)**<br>*(e.g., `meta/llama-3.2-11b-vision-instruct`, `nvidia/vila-1.5`, `nvidia/cosmos-nemotron-34b`)* | Cloud or On-Premise Microservice (OpenAI-compatible REST API) | • Zero local GPU requirement for development.<br>• Exceptional semantic scene reasoning and hazard understanding.<br>• Reliable structured JSON output. | **Phases 1 & 2 (Primary choice for fast development)** and semantic hazard reasoning. |
+| **NVIDIA Nemotron 3 Ultra** | Nebius Token Factory public serverless endpoint (OpenAI-compatible REST API) | • Deep reasoning for hazard classification, severity assessment, regulatory cross-referencing.<br>• Excellent structured JSON output.<br>• Zero local GPU requirement. | **Phases 1 & 2 (Primary reasoning model)** for hazard assessment, recommendations, and report synthesis. |
+| **NVIDIA Nemotron 3 Super** | Nebius Token Factory public serverless endpoint (OpenAI-compatible REST API) | • Fast, low-latency calls.<br>• Keeps the app responsive and credits stretch further. | Chat Q&A, quick lookups, status updates, real-time operator queries. |
+| **NVIDIA-served VLM**<br>*(e.g., `meta/llama-3.2-11b-vision-instruct`, `nvidia/vila-1.5`, `nvidia/cosmos-nemotron-34b`)* | Nebius Token Factory public serverless endpoint (OpenAI-compatible REST API, vision modality) | • Exceptional semantic scene reasoning and hazard understanding from images/frames.<br>• Reliable structured JSON output. | **Phases 1 & 2 (Primary choice for fast development)** and semantic hazard reasoning. |
 | **NVIDIA Cosmos** (`nvidia/cosmos-nemotron-34b`) | Physical AI & World Foundation Model | • Specifically tailored for physical dynamics, 3D spatial awareness, and industrial environments. | Advanced physical risk modeling (predictive collision risk). |
-| **NVIDIA DeepStream SDK + TensorRT** | Edge Video Pipeline (Accelerated on GPU / Jetson) | • 30+ FPS multi-stream RTSP hardware decoding (NVDEC).<br>• Sub-millisecond latency for bounding box object detection (YOLO, PeopleNet). | **Phase 6+ (Production Edge)**: Continuous video ingestion with VLM triggered on anomaly. |
 | **NVIDIA NeMo Guardrails** | LLM/VLM Safety & Policy Layer | • Prevents hallucinations in generated safety reports.<br>• Enforces adherence to safety standards. | Phase 5 safety report generation. |
 
 ### Recommended Approach: Hybrid Pipeline
-1. **Cloud / Development Brain**: Use **NVIDIA NIM API** via `https://integrate.api.nvidia.com/v1`. This allows instant testing with image uploads and flexible prompt engineering without requiring multi-gigabyte local models.
+1. **Cloud / Development Brain**: Use **Nebius Token Factory** via `https://api.tokenfactory.nebius.com/v1/` (OpenAI-compatible). This allows instant testing with image uploads and flexible prompt engineering without requiring multi-gigabyte local models. Get an API key at `https://tokenfactory.nebius.com`.
 2. **Video & Frame Sampling Engine**: Lightweight Python (OpenCV) frame sampler that selects key frames (e.g. 1 frame/sec or motion-triggered) to minimize unnecessary API calls.
-3. **Edge Optimization Ready**: The architecture allows swapping the cloud NIM endpoint for a local NIM container or TensorRT pipeline in the future without altering application code.
+3. **Edge Optimization Ready**: The architecture allows swapping the public serverless endpoint for a Nebius dedicated endpoint (single-region, zero data retention for sensitive workloads) or local TensorRT pipeline in the future without altering application code.
 
 ---
 
@@ -57,9 +60,11 @@ To satisfy the NVIDIA requirement while balancing flexibility, latency, and hard
                |
                v
    +-------------------------------------------------------------------------------+
-   |                             NVIDIA AI CORE                                    |
-   |  - NVIDIA NIM VLM Client (Llama 3.2 Vision / VILA / Cosmos)                  |
-   |  - Semantic Prompts: Hazard detection, severity (Low-Critical), actions       |
+   |                      NEBIUS TOKEN FACTORY (NVIDIA AI)                         |
+   |  - Nemotron 3 Ultra  : hazard classification, severity, recommendations       |
+   |  - Nemotron 3 Super  : chat Q&A, quick lookups                                |
+   |  - VLM (Llama 3.2 Vision / VILA / Cosmos) : scene understanding              |
+   |  - OpenAI-compatible REST API at https://api.tokenfactory.nebius.com/v1/      |
    |  - Output: Validated Pydantic schema (JSON)                                   |
    +---------------------------------------+---------------------------------------+
                                            |
@@ -82,20 +87,50 @@ To satisfy the NVIDIA requirement while balancing flexibility, latency, and hard
                        +-------------------+-------------------+
                                            |
                                            v
-                         +-----------------------------------+
-                         |       FASTAPI + WEB DASHBOARD     |
-                         | - Live camera feed overlay        |
-                         | - Interactive timeslot scrubber   |
-                         | - Incident management & downloads |
-                         +-----------------------------------+
+            +--------------------------------------+        +--------------------------+
+            |   PYTHON BACKEND (FastAPI)           |<------>|  NEXT.JS FRONTEND        |
+            |   - /api/analyze (POST image)        |  REST  |  (TypeScript + shadcn/ui) |
+            |   - /api/jobs/{id} (GET status)      |   +    |  - Upload UI             |
+            |   - /api/jobs/{id}/trace (GET)      |  WS     |  - Annotated image view  |
+            |   - VLM calls via Nebius Token       |        |  - Risk list + report    |
+            |     Factory (OpenAI SDK)             |        |  - Trace timeline        |
+            +--------------------------------------+        |  - Dark mode, responsive  |
+                                                            +--------------------------+
 ```
 
-### Architectural Decisions to Finalize with the Team
-- **Backend**: Python 3.11+ with **FastAPI** (asynchronous, high performance, native OpenAPI documentation).
-- **Web UI Options**:
-  - *Option A*: Embedded FastAPI dashboard (Jinja2 + Vanilla JS/CSS + WebSockets) for minimal complexity and zero extra build step.
-  - *Option B*: Standalone modern frontend (Vite + React / Next.js) communicating via REST + WebSocket API.
+### Architectural Decisions (locked)
+- **Backend**: Python 3.11+ with **FastAPI** (asynchronous, high performance, native OpenAPI documentation). Hosts the VLM/Ultra/Super inference pipeline via Nebius Token Factory, Tavily integration, and PDF report generation. Owners: Honza + Adam.
+- **Web UI**: **Option B chosen** — Standalone modern frontend in **Next.js 16 + TypeScript + Tailwind CSS 4 + shadcn/ui**, communicating with the Python backend via REST + WebSocket. Owners: Šimon + Nikol. The Next.js frontend lives in this same repository under `frontend/` and is deployed to Vercel; the Python backend lives under `backend/` (currently `src/`) and is deployed separately.
 - **Persistence**: SQLite (development) -> PostgreSQL (production) for storing incident timeslots, alerts, and report logs.
+
+### Hybrid Repository Layout
+```
+SimonCurda/Hazsight/
+├── README.md                  (shared)
+├── AGENTS.md                  (shared — mandatory rules for AI agents)
+├── AGENT_LOG.md               (shared — activity log)
+├── IMPLEMENTATION_PLAN.md    (this document, shared)
+├── LICENSE                    (MIT)
+├── .env.example               (merged: frontend + backend vars)
+├── .gitignore                 (merged)
+├── .github/workflows/ci.yml  (lint Python + build Next.js)
+├── frontend/                  (Next.js 16 + TypeScript — Šimon)
+│   ├── package.json
+│   ├── next.config.ts
+│   ├── tsconfig.json
+│   ├── tailwind.config.ts
+│   ├── components.json
+│   ├── src/
+│   │   ├── app/               (App Router: / route only)
+│   │   ├── components/        (shadcn/ui + custom)
+│   │   ├── lib/              (Nebius client, api client)
+│   │   └── hooks/
+│   └── public/
+└── backend/                  (Python — David + Honza)
+    ├── pyproject.toml
+    ├── src/hazsight/         (FastAPI app, ai/, alerts/, reports/, stream/)
+    └── tests/
+```
 
 ---
 
@@ -145,10 +180,10 @@ class TimeslotIncident:
 ## 5. Phased Implementation Roadmap
 
 ### Phase 1: Image Scene Description (Baseline VLM)
-- **Goal**: Connect to NVIDIA NIM API with a test image.
+- **Goal**: Connect to Nebius Token Factory with a test image using an NVIDIA-served VLM (e.g. `meta/llama-3.2-11b-vision-instruct`).
 - **Outcome**: The AI produces an accurate natural language description of what it observes (environment, equipment, personnel, lighting, general activities).
 - **Deliverables**:
-  - NVIDIA API client configuration.
+  - Nebius Token Factory API client configuration (in `backend/src/hazsight/config.py`).
   - CLI verification script taking a sample image and printing scene description.
 
 ### Phase 2: Static Hazard & Risk Recognition
@@ -175,10 +210,10 @@ class TimeslotIncident:
 - **Outcome**:
   - Aggregated timeslot summary, incident charts, and high-risk frame snapshots.
   - Export formats: Markdown, JSON, and PDF (via ReportLab).
-  - Actionable recommendations generated by NVIDIA AI.
+  - Actionable recommendations generated by Nemotron 3 Ultra via Nebius Token Factory.
 
 ### Phase 6: Web Interface & Operator Dashboard
-- **Goal**: Web interface for safety operators.
+- **Goal**: Web interface (Next.js + shadcn/ui) for safety operators.
 - **Outcome**:
   - Live feed view with hazard status indicator.
   - Interactive timeslot timeline scrubber.
@@ -186,12 +221,16 @@ class TimeslotIncident:
 
 ---
 
-## 6. How to Obtain an NVIDIA NIM API Key
+## 6. How to Obtain a Nebius Token Factory API Key
 
-1. Visit [build.nvidia.com](https://build.nvidia.com).
-2. Browse models (e.g. `meta/llama-3.2-11b-vision-instruct` or `nvidia/vila-1.5`).
-3. Generate a personal API key.
-4. Set the key in your local `.env`:
+> **Hackathon compliance**: Submissions must use Nebius Token Factory (or Nebius AI Cloud), not NVIDIA's direct API at `build.nvidia.com`. The Nebius Token Factory serves the same NVIDIA open-source models (Nemotron 3 Ultra, Nemotron 3 Super, Llama 3.2 Vision, VILA, Cosmos) through an OpenAI-compatible endpoint.
+
+1. Visit [tokenfactory.nebius.com](https://tokenfactory.nebius.com).
+2. Create an account (Google or GitHub login supported).
+3. Join the **Nebius Builder Program** for hackathon credits (Nebius Token Factory, Tavily, and Nebius Academy access — see the hackathon rules page).
+4. Generate a personal API key in the Token Factory UI.
+5. Verify available models in the playground (look for `nvidia/nemotron-3-ultra`, `nvidia/nemotron-3-super`, and a vision model like `meta/llama-3.2-11b-vision-instruct`).
+6. Set the key in your local `.env`:
    ```bash
-   NVIDIA_API_KEY=nvapi-your-key-here
+   NEBIUS_API_KEY=your-nebius-token-factory-key-here
    ```

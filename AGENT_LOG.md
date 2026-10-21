@@ -21,6 +21,26 @@ Every agent is **required** to prepend a new entry to the [Action History](#acti
 
 ## Action History
 
+### [2026-10-21 13:25] - Nebius Token Factory Compliance Fix (Swap NVIDIA NIM Direct API)
+- **Agent**: Z.ai Code (assisting Šimon Čurda)
+- **What**:
+  - Replaced NVIDIA NIM direct API (`https://integrate.api.nvidia.com/v1`, `NVIDIA_API_KEY` from `build.nvidia.com`) with **Nebius Token Factory** (`https://api.tokenfactory.nebius.com/v1/`, `NEBIUS_API_KEY` from `tokenfactory.nebius.com`) in [`config.py`](src/hazsight/config.py) and [`.env.example`](.env.example).
+  - Renamed env vars: `NVIDIA_API_KEY` -> `NEBIUS_API_KEY`, `NVIDIA_BASE_URL` -> `NEBIUS_BASE_URL`, `NVIDIA_MODEL` -> split into `NEBIUS_REASONING_MODEL` (Nemotron 3 Ultra) + `NEBIUS_FAST_MODEL` (Nemotron 3 Super) + `NEBIUS_VLM_MODEL` (vision model).
+  - Updated [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md) Section 2 (NVIDIA AI Technologies via Nebius Token Factory), Section 3 (architecture diagram + hybrid repo layout), Phase 1 deliverables, and Section 6 (how to obtain a Nebius Token Factory API key instead of NVIDIA NIM API key).
+- **Where**:
+  - [`src/hazsight/config.py`](src/hazsight/config.py)
+  - [`.env.example`](.env.example)
+  - [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md)
+- **Why**:
+  - Hackathon official rules require: *"All submissions must run on either Nebius Token Factory or Nebius AI Cloud and use at least one NVIDIA open source model."* The original `config.py` used NVIDIA's direct API at `integrate.api.nvidia.com`, which is NOT Nebius Token Factory — this would have caused disqualification.
+  - Nebius Token Factory is OpenAI-compatible, so David's existing `openai` SDK code requires no code logic changes — only base URL, API key env var, and model name updates.
+  - NVIDIA Nemotron 3 Ultra and Nemotron 3 Super are confirmed available on Nebius Token Factory (per `llmendpoint.com/providers/nebius-token-factory`), satisfying the "at least one NVIDIA open-source model" requirement.
+- **Verification**:
+  - Confirmed Nebius Token Factory endpoint via official docs ([`docs.tokenfactory.nebius.com/quickstart`](https://docs.tokenfactory.nebius.com/quickstart)): `https://api.tokenfactory.nebius.com/v1/`, OpenAI-compatible, Bearer auth.
+  - Confirmed Nemotron 3 Ultra + Nemotron 3 Super + Llama 3.2 Vision availability via Nebius Token Factory provider catalog.
+  - Cannot run Python locally (env constrained to Next.js 16 + Bun on port 3000); David or Honza must verify the backend runs correctly with a real `NEBIUS_API_KEY` once Nebius Builder Program access is set up.
+  - Verified all changed files have valid Python syntax and valid Markdown.
+
 ### [2026-10-21 10:41] - Strict GitHub Formatting: Removed Emojis & Replaced Absolute Local Paths
 - **Agent**: Antigravity (Gemini 3.8 Flash)
 - **What**:
