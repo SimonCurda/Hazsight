@@ -124,18 +124,18 @@ export function LandingView({ onUploadClick }: LandingViewProps) {
               <span className="hazsight-readout text-muted-foreground/60">{'>'}</span>{' '}
               Hazsight
             </h1>
-            <p className="hazsight-readout mt-3 text-base text-amber-400/80 sm:text-lg">
+            <p className="hazsight-readout mt-3 text-base text-lime-400/80 sm:text-lg">
               AI safety inspector
             </p>
 
             {/* Tagline — refined sans */}
             <p className="mx-auto mt-8 max-w-2xl text-base leading-relaxed text-foreground/75 md:text-lg">
               Upload a photo. The{' '}
-              <span className="text-amber-400">Nemotron 3 Ultra</span> reasoning
+              <span className="text-lime-400">Nemotron 3 Ultra</span> reasoning
               engine detects safety hazards — blocked exits, flammables near
               heat, overloaded outlets — marks them on the image with severity
               badges, and generates a polished PDF report with cited
-              regulations. <span className="text-amber-400">In 30 seconds.</span>
+              regulations. <span className="text-lime-400">In 30 seconds.</span>
             </p>
 
             {/* CTA — `[ Initiate scan ]` (mono with brackets) + View source (sans) */}
@@ -143,7 +143,7 @@ export function LandingView({ onUploadClick }: LandingViewProps) {
               <Button
                 size="lg"
                 onClick={onUploadClick}
-                className="hazsight-readout hazsight-glow-hover gap-2 border border-amber-500/40 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 hover:text-amber-300"
+                className="hazsight-readout hazsight-glow-hover gap-2 border border-lime-500/40 bg-lime-500/10 text-lime-400 hover:bg-lime-500/20 hover:text-lime-300"
               >
                 <Camera className="h-4 w-4" />
                 [ Initiate scan ]
@@ -171,7 +171,7 @@ export function LandingView({ onUploadClick }: LandingViewProps) {
         </div>
 
         {/* Bottom border — subtle gradient */}
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-lime-500/30 to-transparent" />
       </section>
 
       {/* Process flow */}
@@ -184,7 +184,7 @@ export function LandingView({ onUploadClick }: LandingViewProps) {
         className="container mx-auto max-w-6xl scroll-mt-20 px-4 py-24"
       >
         <div className="mb-16">
-          <p className="hazsight-readout text-xs uppercase tracking-widest text-amber-400/60">
+          <p className="hazsight-readout text-xs uppercase tracking-widest text-lime-400/60">
             {'// Process'}
           </p>
           <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
@@ -208,7 +208,7 @@ export function LandingView({ onUploadClick }: LandingViewProps) {
               <Card className="hazsight-hud hazsight-hover-lift relative h-full overflow-hidden border-border/60 bg-card/40">
                 <CardHeader>
                   <div className="mb-4 flex items-center justify-between">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/5 text-amber-400">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-lime-500/30 bg-lime-500/5 text-lime-400">
                       <step.icon className="h-5 w-5" />
                     </div>
                     <span className="hazsight-readout text-xs text-muted-foreground/60">
@@ -242,7 +242,7 @@ export function LandingView({ onUploadClick }: LandingViewProps) {
         <div className="absolute inset-0 -z-10 hazsight-grid-bg opacity-30" aria-hidden />
         <div className="container mx-auto max-w-6xl px-4 py-24">
           <div className="mb-16">
-            <p className="hazsight-readout text-xs uppercase tracking-widest text-amber-400/60">
+            <p className="hazsight-readout text-xs uppercase tracking-widest text-lime-400/60">
               {'// Detection'}
             </p>
             <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
@@ -261,9 +261,9 @@ export function LandingView({ onUploadClick }: LandingViewProps) {
                 whileInView="visible"
                 viewport={{ once: true }}
                 variants={cardVariants}
-                className="hazsight-readout flex items-center gap-3 rounded-lg border border-border/40 bg-card/40 px-4 py-3 text-sm transition-all hover:border-amber-500/40 hover:bg-amber-500/5"
+                className="hazsight-readout flex items-center gap-3 rounded-lg border border-border/40 bg-card/40 px-4 py-3 text-sm transition-all hover:border-lime-500/40 hover:bg-lime-500/5"
               >
-                <span className="text-amber-400">
+                <span className="text-lime-400">
                   <AlertTriangle className="h-3.5 w-3.5" />
                 </span>
                 <span className="flex-1 text-foreground/90">{hazard}</span>
@@ -285,7 +285,7 @@ export function LandingView({ onUploadClick }: LandingViewProps) {
         className="container mx-auto max-w-6xl px-4 py-24"
       >
         <div className="mb-16">
-          <p className="hazsight-readout text-xs uppercase tracking-widest text-amber-400/60">
+          <p className="hazsight-readout text-xs uppercase tracking-widest text-lime-400/60">
             {'// Infrastructure'}
           </p>
           <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
@@ -308,7 +308,7 @@ export function LandingView({ onUploadClick }: LandingViewProps) {
                 variants={cardVariants}
                 className="flex items-center gap-3 rounded-lg border border-border/40 bg-background/40 px-4 py-3"
               >
-                <tech.icon className="h-4 w-4 text-amber-400" />
+                <tech.icon className="h-4 w-4 text-lime-400" />
                 <span className="text-sm font-medium text-foreground/90">{tech.label}</span>
               </motion.div>
             ))}
@@ -338,10 +338,10 @@ export function LandingView({ onUploadClick }: LandingViewProps) {
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="mx-auto mb-8 flex h-16 w-16 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/5"
+            className="mx-auto mb-8 flex h-16 w-16 items-center justify-center rounded-full border border-lime-500/30 bg-lime-500/5"
             style={{ boxShadow: '0 0 32px oklch(0.78 0.15 70 / 0.15)' }}
           >
-            <ShieldCheck className="h-7 w-7 text-amber-400" />
+            <ShieldCheck className="h-7 w-7 text-lime-400" />
           </motion.div>
           <h2 className="text-4xl font-bold tracking-tight sm:text-5xl">
             Ready to inspect?
@@ -352,7 +352,7 @@ export function LandingView({ onUploadClick }: LandingViewProps) {
           <Button
             size="lg"
             onClick={onUploadClick}
-            className="hazsight-readout hazsight-glow-hover mt-10 gap-2 border border-amber-500/40 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 hover:text-amber-300"
+            className="hazsight-readout hazsight-glow-hover mt-10 gap-2 border border-lime-500/40 bg-lime-500/10 text-lime-400 hover:bg-lime-500/20 hover:text-lime-300"
           >
             <Camera className="h-4 w-4" />
             [ Upload photo ]

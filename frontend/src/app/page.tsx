@@ -164,7 +164,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col">
       {/* Sticky header — terminal style */}
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
         <div className="container mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
@@ -185,7 +185,7 @@ export default function Home() {
               className="flex items-center gap-2"
               aria-label="Hazsight home"
             >
-              <div className="flex h-7 w-7 items-center justify-center rounded-md border border-amber-500/40 bg-amber-500/5 text-amber-400">
+              <div className="flex h-7 w-7 items-center justify-center rounded-md border border-lime-500/40 bg-lime-500/5 text-lime-400">
                 <AlertTriangle className="h-4 w-4" />
               </div>
               <span className="text-sm font-semibold tracking-tight">
@@ -221,7 +221,7 @@ export default function Home() {
           </nav>
         </div>
         {/* Tech divider line */}
-        <div className="h-px bg-gradient-to-r from-transparent via-amber-500/40 to-transparent" />
+        <div className="h-px bg-gradient-to-r from-transparent via-lime-500/40 to-transparent" />
       </header>
 
       {/* Main content — switches based on view */}
@@ -262,7 +262,7 @@ export default function Home() {
                 className="gap-2"
                 onClick={handleTryDemo}
               >
-                <Sparkles className="h-4 w-4 text-amber-500" />
+                <Sparkles className="h-4 w-4 text-lime-500" />
                 Try with a demo image
               </Button>
               <p className="mt-2 text-xs text-muted-foreground">
@@ -305,7 +305,7 @@ export default function Home() {
           <div className="flex flex-col items-start justify-between gap-6 md:flex-row">
             <div className="max-w-md">
               <div className="mb-2 flex items-center gap-2">
-                <div className="flex h-6 w-6 items-center justify-center rounded-md border border-amber-500/40 bg-amber-500/5 text-amber-400">
+                <div className="flex h-6 w-6 items-center justify-center rounded-md border border-lime-500/40 bg-lime-500/5 text-lime-400">
                   <AlertTriangle className="h-3.5 w-3.5" />
                 </div>
                 <span className="text-sm font-semibold">Hazsight</span>
@@ -314,7 +314,7 @@ export default function Home() {
                 </span>
               </div>
               <p className="text-xs leading-relaxed text-muted-foreground">
-                <span className="hazsight-readout text-amber-400/60">{'// '}</span>
+                <span className="hazsight-readout text-lime-400/60">{'// '}</span>
                 AI safety inspector · NVIDIA Nemotron on Nebius Token Factory ·
                 Built by Team DAMR58H for Nebius x NVIDIA Global AI Hackathon.
               </p>
@@ -324,7 +324,7 @@ export default function Home() {
                 href="https://github.com/SimonCurda/Hazsight"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-amber-400"
+                className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-lime-400"
               >
                 <Github className="h-4 w-4" />
                 GitHub repository
@@ -334,7 +334,7 @@ export default function Home() {
                 href="https://nebiusglobalaihackathon.devpost.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-amber-400"
+                className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-lime-400"
               >
                 <ExternalLink className="h-4 w-4" />
                 Hackathon page
