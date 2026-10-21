@@ -64,7 +64,7 @@ function formatCategory(category: string): string {
 const SCORE_COLORS: Record<string, string> = {
   CRITICAL: '#dc2626', // red-600
   HIGH: '#ea580c',      // orange-600
-  LOW: '#059669',       // emerald-600
+  LOW: '#047857',       // emerald-700 (darker — was emerald-600)
 }
 
 function riskLevel(score: number): string {
@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: 'Courier-Bold',
     fontSize: 24,
-    color: BRAND,
+    color: '#1a1a1a',
   },
   subtitle: {
     fontFamily: 'Courier',
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontFamily: 'Courier',
     fontSize: 8,
-    color: BRAND,
+    color: '#555',
     marginBottom: 4,
     marginTop: 16,
   },

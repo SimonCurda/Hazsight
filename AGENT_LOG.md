@@ -21,6 +21,17 @@ Every agent is **required** to prepend a new entry to the [Action History](#acti
 
 ## Action History
 
+### [2026-10-21 18:35] - PDF: eliminate ALL green text on white background
+- **Agent**: Z.ai Code (assisting Šimon Čurda — direct user request)
+- **What**:
+  - Changed title color from BRAND green (#76b900) to near-black (#1a1a1a) — was unreadable on white.
+  - Changed section labels from BRAND green (#76b900) to dark gray (#555) — was unreadable on white.
+  - Darkened LOW score color from emerald-600 (#059669) to emerald-700 (#047857) for safety.
+  - Green (BRAND #76b900) now ONLY used for: table header background (white text on green = OK), borders (decorative lines = OK). No green text on white background anywhere.
+- **Where**: [`frontend/src/lib/pdf-report.tsx`](frontend/src/lib/pdf-report.tsx) — title.color, sectionLabel.color, SCORE_COLORS.LOW
+- **Why**: User: "tne problem s zelenym textem na bilim pozadi tam fuert je. oprav to" — green text on white was STILL there after previous fix (which only fixed badges/score, not title/section labels).
+- **Verification**: Lint passes. curl test: PDF generated (HTTP 200, valid %PDF).
+
 ### [2026-10-21 18:25] - PDF report polish — darker badge colors + spaces instead of underscores + proper case headers
 - **Agent**: Z.ai Code (assisting Šimon Čurda — direct user request)
 - **What**:
