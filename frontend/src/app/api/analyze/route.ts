@@ -181,13 +181,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     imageUrl = body.image_url || '/demo-warehouse.png'
   }
 
-  const jobId = createJob(imageUrl)
+  const jobId = createJob(imageUrl, imageBase64)
 
-  // Start background processing — do NOT await (would block response).
-  void runAnalysis(jobId, imageBase64, imageUrl, mimeType)
+  // Await processing — ensures the job is complete before we return the response.
+  // (Background `void` processing doesn't work reliably in Next.js serverless
+  // because the function may be killed after the response is sent.)
+  await runAnalysis(jobId, imageBase64, imageUrl, mimeType)
 
   return NextResponse.json({
     job_id: jobId,
-    status: 'queued',
+    status: 'completed',
   })
 }

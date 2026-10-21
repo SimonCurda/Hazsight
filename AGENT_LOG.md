@@ -21,6 +21,31 @@ Every agent is **required** to prepend a new entry to the [Action History](#acti
 
 ## Action History
 
+### [2026-10-21 17:55] - PDF report generation (Next.js @react-pdf/renderer) + job store globalThis fix + synchronous processing
+- **Agent**: Z.ai Code (assisting Šimon Čurda — direct user request)
+- **What**:
+  - Installed `@react-pdf/renderer` v4.9.0 — renders React components to PDF (works on Vercel, no native deps).
+  - Created [`frontend/src/lib/pdf-report.tsx`](frontend/src/lib/pdf-report.tsx) — PdfReport React component with @react-pdf/renderer primitives (Document, Page, View, Text, Image). Layout: header (Hazsight branding + timestamp), safety score (48pt mono bold + risk level with dynamic color), scene description, image (if available — from upload or demo image), hazard table (sorted by severity, alternating row colors, severity badges, confidence %), footer (compliance line + page number).
+  - Created [`frontend/src/app/api/reports/[jobId]/route.ts`](frontend/src/app/api/reports/[jobId]/route.ts) — GET endpoint that fetches the job from the store, reads the image (from job.imageBase64 or from public dir for demo images), generates the PDF via `renderToBuffer()`, returns as `application/pdf` with `Content-Disposition: attachment`.
+  - Updated [`frontend/src/lib/job-store.ts`](frontend/src/lib/job-store.ts) — **CRITICAL FIX**: changed in-memory `Map` to use `globalThis` (same pattern as Prisma client) so the store survives Next.js dev hot reloads. Without this fix, the job store was reset between requests (POST creates job → GET can't find it).
+  - Updated [`frontend/src/app/api/analyze/route.ts`](frontend/src/app/api/analyze/route.ts) — changed `void runAnalysis()` (fire-and-forget background) to `await runAnalysis()` (synchronous). Background processing didn't work in Next.js serverless because the function may be killed after the response is sent. Now the POST waits for processing to complete (~7s for mock fallback), then returns `{"status":"completed"}`. The job is in the store when the response is returned, so subsequent GETs (polling, PDF) find it.
+  - Updated `completeJob()` in job-store.ts to set `reportPdfUrl` to `/api/reports/{jobId}` (was `#report-{jobId}` placeholder).
+  - Added `imageBase64` field to Job interface + `createJob()` accepts `imageBase64` parameter. The `/api/analyze` route passes the uploaded file's base64 (or null for demo image URL).
+- **Where**:
+  - [`frontend/package.json`](frontend/package.json) — @react-pdf/renderer dep added
+  - [`frontend/src/lib/pdf-report.tsx`](frontend/src/lib/pdf-report.tsx) (NEW, ~200 lines)
+  - [`frontend/src/app/api/reports/[jobId]/route.ts`](frontend/src/app/api/reports/[jobId]/route.ts) (NEW, ~80 lines)
+  - [`frontend/src/lib/job-store.ts`](frontend/src/lib/job-store.ts) — globalThis fix + imageBase64 field + reportPdfUrl fix
+  - [`frontend/src/app/api/analyze/route.ts`](frontend/src/app/api/analyze/route.ts) — void → await
+- **Why**:
+  - User asked: "udelej to ad to funguje. to jke to co cheme." (make it work, that's what we want). The PDF download was a placeholder (`#report-{jobId}`) — now it actually generates + downloads a real PDF.
+  - User asked about Vercel deployment ("to jako nejde spustit na vercelu?"). Python CAN run on Vercel (via serverless functions), but @react-pdf/renderer (TypeScript) is simpler for the hackathon demo — one Vercel project, no separate backend needed. The Python PDF code (already committed) remains for Railway/Render deployment.
+  - globalThis fix was critical — without it, the in-memory job store reset on every hot reload in dev mode, making the job unfindable between POST and GET requests. Same issue would occur on Vercel if serverless function instances are recycled. Using globalThis (like Prisma client does) ensures the Map persists across hot reloads within the same process.
+  - Synchronous processing (await instead of void) was necessary because Next.js serverless functions may be killed after the response is sent — background processing (`void`) is unreliable. The POST now takes ~7s (mock fallback) or longer (real Nebius VLM calls), which is within Vercel's 60s Pro timeout.
+- **Verification**:
+  - Ran `bun run lint` — passes with 0 errors.
+  - Tested via curl: POST /api/analyze → `{"job_id":"job-...","status":"completed"}` (7s synchronous). GET /api/jobs/{jobId} → status: completed, score: 42, hazards: 4, PDF URL: /api/reports/{jobId}. GET /api/jobs/{jobId}/trace → 10 trace events. GET /api/reports/{jobId} → HTTP 200, 5578 bytes, Content-Type: application/pdf. PDF magic bytes: `%PDF` (valid PDF). ✅
+
 ### [2026-10-21 16:15] - Python PDF report generation (modular, parameterized) + BoundingBox schema + FastAPI entry point + TODO for Nikol
 - **Agent**: Z.ai Code (assisting Šimon Čurda — direct user request)
 - **What**:

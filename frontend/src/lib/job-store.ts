@@ -12,6 +12,7 @@ interface Job {
   id: string
   status: 'queued' | 'processing' | 'completed' | 'failed'
   imageUrl: string
+  imageBase64: string | null
   sceneDescription: string | null
   hazards: DetectedHazard[] | null
   overallSafetyScore: number | null
@@ -22,15 +23,25 @@ interface Job {
   traceEvents: TraceEvent[]
 }
 
-// In-memory store (resets on server restart).
-const jobs = new Map<string, Job>()
+// In-memory store (uses globalThis to survive hot reloads in dev mode —
+// same pattern as Prisma client).
+const globalForJobs = globalThis as unknown as {
+  __hazsightJobs?: Map<string, Job>
+}
 
-export function createJob(imageUrl: string): string {
+const jobs = globalForJobs.__hazsightJobs ?? new Map<string, Job>()
+
+if (!globalForJobs.__hazsightJobs) {
+  globalForJobs.__hazsightJobs = jobs
+}
+
+export function createJob(imageUrl: string, imageBase64: string | null = null): string {
   const id = `job-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
   const job: Job = {
     id,
     status: 'queued',
     imageUrl,
+    imageBase64,
     sceneDescription: null,
     hazards: null,
     overallSafetyScore: null,
@@ -74,7 +85,7 @@ export function completeJob(
   job.sceneDescription = result.sceneDescription
   job.hazards = result.hazards
   job.overallSafetyScore = result.overallSafetyScore
-  job.reportPdfUrl = `#report-${jobId}`
+  job.reportPdfUrl = `/api/reports/${jobId}`
   job.status = 'completed'
   job.completedAt = new Date().toISOString()
 }
