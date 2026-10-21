@@ -20,11 +20,11 @@ All AI agents **MUST** follow these rules:
 - **Strict Requirement**: All code, comments, docstrings, documentation, git messages, and logs **MUST BE IN ENGLISH**.
 
 ### B. Mandatory Logging in `AGENT_LOG.md`
-Before completing any task, an agent **MUST** append an entry to [`AGENT_LOG.md`](file:///Users/Dajda/Documents/Hazsight/AGENT_LOG.md) containing:
+Before completing any task, an agent **MUST** append an entry to [`AGENT_LOG.md`](AGENT_LOG.md) containing:
 1. **Timestamp**: Local / ISO time.
 2. **Agent / Task Identifier**.
 3. **What was done**: Concise summary of changes.
-4. **Where**: List of modified/created files with markdown links.
+4. **Where**: List of modified/created files with repository-relative markdown links.
 5. **Why**: Motivation and architectural rationale.
 6. **Verification**: How the change was validated.
 
@@ -32,8 +32,12 @@ Before completing any task, an agent **MUST** append an entry to [`AGENT_LOG.md`
 - **Skeleton & Design First**: Keep the codebase modular and skeleton-based until exact design specifications are decided with the user.
 - Use placeholders, structural outlines, type definitions, and conceptual notes rather than dense, premature logic.
 
-### D. Security & Best Practices
-- Never hardcode secrets or API keys. Always use `.env` via [`src/hazsight/config.py`](file:///Users/Dajda/Documents/Hazsight/src/hazsight/config.py).
+### D. No Emojis & Use Repository-Relative Links
+- Do not use emojis in commit messages, documentation, or code comments.
+- Always link files using clean repository-relative paths (e.g. `[README.md](README.md)`) for GitHub compatibility. Never use local computer absolute paths (e.g. `file:///Users/...`).
+
+### E. Security & Best Practices
+- Never hardcode secrets or API keys. Always use `.env` via [`src/hazsight/config.py`](src/hazsight/config.py).
 - Use Python 3.11+ type hints for all function and method signatures.
 - Adhere to Black / Ruff compatible formatting (4 spaces).
 

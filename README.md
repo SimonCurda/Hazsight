@@ -1,4 +1,4 @@
-# Hazsight 🛡️👁️
+# Hazsight
 
 > **Intelligent Vision System for Hazard Detection, Incident Timeslots, and Safety Reporting using NVIDIA AI.**
 
@@ -6,15 +6,15 @@ Hazsight analyzes camera feeds and visual recordings to detect occupational haza
 
 ---
 
-## 📚 Project Documentation
+## Project Documentation
 
-- 📋 [**`IMPLEMENTATION_PLAN.md`**](file:///Users/Dajda/Documents/Hazsight/IMPLEMENTATION_PLAN.md): Complete technical plan, NVIDIA AI model analysis (NIM, VILA, Cosmos, DeepStream), system architecture options, and phased roadmap.
-- 🤖 [**`AGENTS.md`**](file:///Users/Dajda/Documents/Hazsight/AGENTS.md): Mandatory rules and instructions for all AI agents contributing to this repository.
-- 📝 [**`AGENT_LOG.md`**](file:///Users/Dajda/Documents/Hazsight/AGENT_LOG.md): Transparent activity log tracking all changes, motivations, and verifications.
+- [**`IMPLEMENTATION_PLAN.md`**](IMPLEMENTATION_PLAN.md): Complete technical plan, NVIDIA AI model analysis (NIM, VILA, Cosmos, DeepStream), system architecture options, and phased roadmap.
+- [**`AGENTS.md`**](AGENTS.md): Mandatory rules and instructions for all AI agents contributing to this repository.
+- [**`AGENT_LOG.md`**](AGENT_LOG.md): Transparent activity log tracking all changes, motivations, and verifications.
 
 ---
 
-## ⚡ Architecture Overview
+## Architecture Overview
 
 ```
 [Camera Feed / Video / RTSP / Image]
@@ -37,7 +37,7 @@ Hazsight analyzes camera feeds and visual recordings to detect occupational haza
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 - **Language**: Python 3.11+
 - **NVIDIA AI**: NVIDIA NIM Microservices (`meta/llama-3.2-11b-vision-instruct`, `nvidia/vila-1.5`, `nvidia/cosmos-nemotron-34b`)
@@ -47,7 +47,7 @@ Hazsight analyzes camera feeds and visual recordings to detect occupational haza
 
 ---
 
-## 🚀 Quickstart (Environment Setup)
+## Quickstart (Environment Setup)
 
 ### 1. Setup Virtual Environment
 ```bash
@@ -65,7 +65,7 @@ cp .env.example .env
 
 ---
 
-## 🗺️ Phased Roadmap
+## Phased Roadmap
 
 1. **Phase 1**: Image Scene Description (Baseline VLM scene understanding)
 2. **Phase 2**: Static Hazard & Risk Recognition (Structured JSON output & hazard classifications)
@@ -76,5 +76,5 @@ cp .env.example .env
 
 ---
 
-## 📄 License
-Licensed under the MIT License - see [LICENSE](file:///Users/Dajda/Documents/Hazsight/LICENSE).
+## License
+Licensed under the MIT License - see [LICENSE](LICENSE).

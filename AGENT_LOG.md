@@ -11,8 +11,8 @@ Every agent is **required** to prepend a new entry to the [Action History](#acti
 ### [YYYY-MM-DD HH:MM] - Task Name / Change Title
 - **Agent**: [Model / Agent Name, e.g. Antigravity (Gemini 3.8 Flash)]
 - **What**: Concise summary of what was added, modified, or refactored.
-- **Where**: Affected files with markdown links:
-  - [`path/to/file.py`](file:///path/to/file.py)
+- **Where**: Affected files with repository-relative markdown links:
+  - [`path/to/file.py`](path/to/file.py)
 - **Why**: Motivation, context, and architectural rationale.
 - **Verification**: How the change was tested or verified.
 ```
@@ -21,21 +21,37 @@ Every agent is **required** to prepend a new entry to the [Action History](#acti
 
 ## Action History
 
+### [2026-10-21 10:41] - Strict GitHub Formatting: Removed Emojis & Replaced Absolute Local Paths
+- **Agent**: Antigravity (Gemini 3.8 Flash)
+- **What**:
+  - Removed all emojis across all documentation and markdown files.
+  - Replaced all local machine absolute URLs (`file:///Users/Dajda/...`) with clean repository-relative links (`README.md`, `LICENSE`, `AGENTS.md`, etc.) so that all links function properly on GitHub.
+  - Added explicit rule to [`AGENTS.md`](AGENTS.md) banning emojis and requiring repository-relative links.
+- **Where**:
+  - [`README.md`](README.md)
+  - [`AGENTS.md`](AGENTS.md)
+  - [`AGENT_LOG.md`](AGENT_LOG.md)
+  - [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md)
+- **Why**:
+  - User requested strictly no emojis and no computer-local paths (`file:///Users/...`) since the repository is published on GitHub.
+- **Verification**:
+  - Ran ripgrep verification for emoji unicode ranges and `file:///` strings across all workspace files.
+
 ### [2026-10-21 10:30] - Complete English Migration & Skeleton-Only Architecture
 - **Agent**: Antigravity (Gemini 3.8 Flash)
 - **What**:
-  - Converted all documentation, comments, schemas, and configurations entirely to **English** per user requirement.
-  - Ensured code is kept as a clean **structural skeleton and notes only** (no premature implementation code), leaving architectural design open for team decision.
-  - Updated [`AGENTS.md`](file:///Users/Dajda/Documents/Hazsight/AGENTS.md), [`AGENT_LOG.md`](file:///Users/Dajda/Documents/Hazsight/AGENT_LOG.md), [`IMPLEMENTATION_PLAN.md`](file:///Users/Dajda/Documents/Hazsight/IMPLEMENTATION_PLAN.md), [`README.md`](file:///Users/Dajda/Documents/Hazsight/README.md), and python package modules to English skeleton structure with design notes.
+  - Converted all documentation, comments, schemas, and configurations entirely to English per user requirement.
+  - Ensured code is kept as a clean structural skeleton and notes only (no premature implementation code), leaving architectural design open for team decision.
+  - Updated [`AGENTS.md`](AGENTS.md), [`AGENT_LOG.md`](AGENT_LOG.md), [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md), [`README.md`](README.md), and python package modules to English skeleton structure with design notes.
 - **Where**:
-  - [`AGENTS.md`](file:///Users/Dajda/Documents/Hazsight/AGENTS.md)
-  - [`AGENT_LOG.md`](file:///Users/Dajda/Documents/Hazsight/AGENT_LOG.md)
-  - [`IMPLEMENTATION_PLAN.md`](file:///Users/Dajda/Documents/Hazsight/IMPLEMENTATION_PLAN.md)
-  - [`README.md`](file:///Users/Dajda/Documents/Hazsight/README.md)
-  - [`pyproject.toml`](file:///Users/Dajda/Documents/Hazsight/pyproject.toml)
-  - [`.env.example`](file:///Users/Dajda/Documents/Hazsight/.env.example)
-  - [`src/hazsight/config.py`](file:///Users/Dajda/Documents/Hazsight/src/hazsight/config.py)
-  - [`src/hazsight/ai/schemas.py`](file:///Users/Dajda/Documents/Hazsight/src/hazsight/ai/schemas.py)
+  - [`AGENTS.md`](AGENTS.md)
+  - [`AGENT_LOG.md`](AGENT_LOG.md)
+  - [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md)
+  - [`README.md`](README.md)
+  - [`pyproject.toml`](pyproject.toml)
+  - [`.env.example`](.env.example)
+  - [`src/hazsight/config.py`](src/hazsight/config.py)
+  - [`src/hazsight/ai/schemas.py`](src/hazsight/ai/schemas.py)
   - `src/hazsight/**/__init__.py`
 - **Why**:
   - Strict user requirement: Everything must be in English, and no full implementation code should be written yet. The repo must remain a lightweight skeleton with clear notes and planning.
