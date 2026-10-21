@@ -165,9 +165,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      {/* Sticky header */}
-      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
+      {/* Sticky header — terminal style */}
+      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+        <div className="container mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
           <div className="flex items-center gap-2">
             {view !== 'landing' && (
               <Button
@@ -175,7 +175,7 @@ export default function Home() {
                 size="icon"
                 onClick={handleBackToHome}
                 aria-label="Back to home"
-                className="rounded-full"
+                className="rounded hazsight-readout"
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
@@ -185,29 +185,29 @@ export default function Home() {
               className="flex items-center gap-2"
               aria-label="Hazsight home"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-amber-500 text-amber-950">
-                <AlertTriangle className="h-5 w-5" />
+              <div className="flex h-7 w-7 items-center justify-center rounded border border-amber-500/60 bg-amber-500/10 text-amber-400 hazsight-glow-amber">
+                <AlertTriangle className="h-4 w-4" />
               </div>
-              <span className="font-mono text-base font-bold tracking-tight">
-                Hazsight
+              <span className="hazsight-readout text-sm font-bold tracking-tight">
+                HAZSIGHT
               </span>
-              <Badge variant="secondary" className="ml-1 hidden text-xs sm:inline-flex">
+              <span className="hazsight-readout text-[10px] text-muted-foreground">
                 v0.1.0
-              </Badge>
+              </span>
             </button>
           </div>
           <nav className="flex items-center gap-1">
             {view === 'landing' && (
               <>
-                <Button variant="ghost" size="sm" asChild className="hidden sm:inline-flex">
-                  <Link href="#how-it-works">How it works</Link>
+                <Button variant="ghost" size="sm" asChild className="hazsight-readout hidden text-xs sm:inline-flex">
+                  <Link href="#how-it-works">PROCESS</Link>
                 </Button>
-                <Button variant="ghost" size="sm" asChild className="hidden sm:inline-flex">
-                  <Link href="#hazards">Hazard types</Link>
+                <Button variant="ghost" size="sm" asChild className="hazsight-readout hidden text-xs sm:inline-flex">
+                  <Link href="#hazards">HAZARDS</Link>
                 </Button>
               </>
             )}
-            <Button variant="ghost" size="icon" asChild className="rounded-full">
+            <Button variant="ghost" size="icon" asChild className="rounded">
               <a
                 href="https://github.com/SimonCurda/Hazsight"
                 target="_blank"
@@ -220,6 +220,8 @@ export default function Home() {
             <ModeToggle />
           </nav>
         </div>
+        {/* Tech divider line */}
+        <div className="h-px bg-gradient-to-r from-transparent via-amber-500/40 to-transparent" />
       </header>
 
       {/* Main content — switches based on view */}
@@ -296,21 +298,25 @@ export default function Home() {
         )}
       </main>
 
-      {/* Sticky footer */}
-      <footer className="mt-auto border-t border-border/40 bg-muted/30">
+      {/* Sticky footer — terminal style */}
+      <footer className="mt-auto border-t border-border/40 bg-muted/20">
+        <div className="absolute inset-0 -z-10 hazsight-grid-bg opacity-30" aria-hidden />
         <div className="container mx-auto max-w-6xl px-4 py-10">
           <div className="flex flex-col items-start justify-between gap-6 md:flex-row">
             <div className="max-w-md">
               <div className="mb-2 flex items-center gap-2">
-                <div className="flex h-6 w-6 items-center justify-center rounded bg-amber-500 text-amber-950">
+                <div className="flex h-6 w-6 items-center justify-center rounded border border-amber-500/60 bg-amber-500/10 text-amber-400">
                   <AlertTriangle className="h-3.5 w-3.5" />
                 </div>
-                <span className="font-mono text-sm font-bold">Hazsight</span>
+                <span className="hazsight-readout text-sm font-bold">HAZSIGHT</span>
+                <span className="hazsight-readout text-[10px] text-muted-foreground">
+                  v0.1.0
+                </span>
               </div>
-              <p className="text-sm text-muted-foreground">
-                AI safety inspector powered by NVIDIA Nemotron on Nebius Token
-                Factory. Built by Team DAMR58H for the Nebius x NVIDIA Global AI
-                Hackathon.
+              <p className="hazsight-readout text-xs leading-relaxed text-muted-foreground">
+                <span className="text-amber-400/70">{'// '}</span>
+                AI safety inspector · NVIDIA Nemotron on Nebius Token Factory ·
+                Built by Team DAMR58H for Nebius x NVIDIA Global AI Hackathon.
               </p>
             </div>
             <div className="flex flex-col gap-2 text-sm">
@@ -318,27 +324,27 @@ export default function Home() {
                 href="https://github.com/SimonCurda/Hazsight"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
+                className="hazsight-readout flex items-center gap-2 text-muted-foreground transition-colors hover:text-amber-400"
               >
                 <Github className="h-4 w-4" />
-                GitHub repository
+                GITHUB_REPOSITORY
                 <ExternalLink className="h-3 w-3" />
               </a>
               <a
                 href="https://nebiusglobalaihackathon.devpost.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
+                className="hazsight-readout flex items-center gap-2 text-muted-foreground transition-colors hover:text-amber-400"
               >
                 <ExternalLink className="h-4 w-4" />
-                Hackathon page
+                HACKATHON_PAGE
               </a>
             </div>
           </div>
-          <div className="mt-8 border-t border-border/40 pt-6 text-xs text-muted-foreground">
-            <p>
-              Licensed under MIT · NVIDIA Nemotron open-source models served on
-              Nebius Token Factory · Best Apps &amp; Agents track
+          <div className="mt-8 border-t border-border/40 pt-6">
+            <p className="hazsight-readout text-[10px] text-muted-foreground">
+              <span className="text-emerald-400">{'// compliance: '}</span>
+              MIT_LICENSED · RUNS_ON_NEBIUS_TOKEN_FACTORY · USES_NVIDIA_NEMOTRON_OPEN_SOURCE_MODELS · BEST_APPS_AND_AGENTS_TRACK
             </p>
           </div>
         </div>
