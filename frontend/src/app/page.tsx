@@ -32,56 +32,122 @@ export default function Home() {
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null)
   const [events, setEvents] = React.useState<TraceEvent[]>([])
   const [result, setResult] = React.useState<JobResult | null>(null)
+  const [jobId, setJobId] = React.useState<string | null>(null)
+  const [uploadedFile, setUploadedFile] = React.useState<File | null>(null)
+  const [isLive, setIsLive] = React.useState(false)
 
-  // Emit trace events over time when in processing view.
+  // Poll for trace events + job status while processing.
   React.useEffect(() => {
-    if (view !== 'processing') return
+    if (view !== 'processing' || !jobId) return
 
-    let i = 0
-    const interval = setInterval(() => {
-      if (i >= MOCK_TRACE_EVENTS.length) {
-        clearInterval(interval)
-        // Slight delay before switching to results so the last "Trace complete"
-        // indicator is visible.
-        setTimeout(() => {
-          setResult({ ...MOCK_JOB_RESULT, image_url: previewUrl || MOCK_JOB_RESULT.image_url })
-          setView('results')
-        }, 600)
-        return
+    let lastEventTimestamp = 0
+    setIsLive(true)
+
+    const poll = async () => {
+      try {
+        // 1. Fetch new trace events since lastTimestamp.
+        const traceRes = await fetch(
+          `/api/jobs/${jobId}/trace?since=${lastEventTimestamp}`,
+        )
+        if (traceRes.ok) {
+          const data = await traceRes.json()
+          if (data.events && data.events.length > 0) {
+            setEvents((prev) => [...prev, ...data.events])
+            lastEventTimestamp = data.events[data.events.length - 1].timestamp
+          }
+        }
+
+        // 2. Check job status.
+        const jobRes = await fetch(`/api/jobs/${jobId}`)
+        if (jobRes.ok) {
+          const jobData: JobResult = await jobRes.json()
+          if (jobData.status === 'completed') {
+            setResult({
+              ...jobData,
+              image_url: previewUrl || jobData.image_url,
+            })
+            setIsLive(false)
+            setView('results')
+          } else if (jobData.status === 'failed') {
+            setIsLive(false)
+            setView('landing')
+            alert(`Analysis failed: ${jobData.error || 'Unknown error'}`)
+          }
+        }
+      } catch (err) {
+        console.error('Polling error:', err)
       }
-      setEvents((prev) => [
-        ...prev,
-        { ...MOCK_TRACE_EVENTS[i], timestamp: Date.now() },
-      ])
-      i += 1
-    }, 900)
+    }
 
+    // Poll immediately, then every 1s.
+    void poll()
+    const interval = setInterval(poll, 1000)
     return () => clearInterval(interval)
-  }, [view, previewUrl])
+  }, [view, jobId, previewUrl])
 
   const handleUploadClick = () => {
     setView('uploading')
   }
 
-  const handleFileSelected = (_file: File, url: string) => {
+  const handleFileSelected = (file: File, url: string) => {
+    setUploadedFile(file)
     setPreviewUrl(url)
   }
 
   const handleClear = () => {
+    setUploadedFile(null)
     setPreviewUrl(null)
   }
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
     setEvents([])
     setResult(null)
     setView('processing')
+
+    try {
+      const formData = new FormData()
+      if (uploadedFile) {
+        formData.append('image', uploadedFile)
+      }
+      const res = await fetch('/api/analyze', {
+        method: 'POST',
+        body: uploadedFile ? formData : undefined,
+      })
+      const data = await res.json()
+      if (data.job_id) {
+        setJobId(data.job_id)
+      } else {
+        throw new Error(data.error || 'Failed to create job')
+      }
+    } catch (err) {
+      alert(`Failed to start analysis: ${err instanceof Error ? err.message : String(err)}`)
+      setView('uploading')
+    }
   }
 
-  const handleTryDemo = () => {
+  const handleTryDemo = async () => {
     setPreviewUrl(MOCK_IMAGE_URL)
     setEvents([])
     setResult(null)
+    setUploadedFile(null)
     setView('processing')
+
+    try {
+      const res = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image_url: MOCK_IMAGE_URL }),
+      })
+      const data = await res.json()
+      if (data.job_id) {
+        setJobId(data.job_id)
+      } else {
+        throw new Error(data.error || 'Failed to create job')
+      }
+    } catch (err) {
+      alert(`Failed to start analysis: ${err instanceof Error ? err.message : String(err)}`)
+      setView('uploading')
+    }
   }
 
   const handleReset = () => {
@@ -89,13 +155,13 @@ export default function Home() {
     setPreviewUrl(null)
     setEvents([])
     setResult(null)
+    setJobId(null)
+    setUploadedFile(null)
   }
 
   const handleBackToHome = () => {
     setView('landing')
   }
-
-  const isLive = view === 'processing' && events.length < MOCK_TRACE_EVENTS.length
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
