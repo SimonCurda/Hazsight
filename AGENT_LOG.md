@@ -21,6 +21,64 @@ Every agent is **required** to prepend a new entry to the [Action History](#acti
 
 ## Action History
 
+### [2026-10-21 16:15] - Python PDF report generation (modular, parameterized) + BoundingBox schema + FastAPI entry point + TODO for Nikol
+- **Agent**: Z.ai Code (assisting Šimon Čurda — direct user request)
+- **What**:
+  - Added `BoundingBox` Pydantic model to [`backend/src/hazsight/ai/schemas.py`](backend/src/hazsight/ai/schemas.py) — coordinates as percentages 0-100 (x, y, width, height). Added `bounding_box: Optional[BoundingBox]` field to `DetectedHazard` so the VLM can return hazard locations for annotation.
+  - Created [`backend/src/hazsight/reports/config.py`](backend/src/hazsight/reports/config.py) — `ReportConfig` dataclass with ALL configurable params (title, subtitle, organization, hackathon, track, severity_colors dict, brand_color (NVIDIA green #76b900), text colors, bg colors, font family/bold/mono, font sizes, page size, margins, image max dimensions, table col widths, logo path, footer text, section toggles). `default_config()` factory function. Modular — pass a custom `ReportConfig` to change appearance without modifying the generator.
+  - Created [`backend/src/hazsight/reports/image_annotator.py`](backend/src/hazsight/reports/image_annotator.py) — `annotate_image()` function that draws severity-colored bounding boxes + labels on the original image using Pillow (PIL). Accepts a custom `severity_colors` dict (defaults from ReportConfig). Semi-transparent fill + solid border + label badge with severity + index number. Returns annotated image as PNG bytes.
+  - Created [`backend/src/hazsight/reports/pdf_generator.py`](backend/src/hazsight/reports/pdf_generator.py) — `generate_report()` main entry point + modular section builders:
+    - `_build_header()` — Hazsight branding + metadata + timestamp
+    - `_build_safety_score()` — big number (48pt mono bold) + risk level (HIGH/MODERATE/LOW) with dynamic color via inline `<font color>` tag
+    - `_build_scene_description()` — text paragraph
+    - `_build_annotated_image()` — calls `annotate_image()` then embeds in PDF via ReportLab Image flowable
+    - `_build_hazard_table()` — Table with Category, Severity, Description, Recommendation, Confidence columns. Sorted by severity (CRITICAL first). Alternating row colors. Brand-colored header.
+    - `_build_regulations()` — placeholder for Tavily citations (will be wired up when Tavily integration is done)
+    - `_build_table_style()` — modular table style from config
+    - `_draw_page_decoration()` — footer on each page (brand-colored line + footer text + page number)
+    - `_score_color()` + `_risk_level()` — helper functions
+    - Uses ReportLab platypus (SimpleDocTemplate, Paragraph, Image, Table, HRFlowable). All colors/fonts/sizes come from ReportConfig.
+  - Updated [`backend/src/hazsight/reports/__init__.py`](backend/src/hazsight/reports/__init__.py) — exports `ReportConfig`, `default_config`, `annotate_image`, `generate_report`.
+  - Created [`backend/src/hazsight/api/reports.py`](backend/src/hazsight/api/reports.py) — FastAPI APIRouter with:
+    - `POST /api/reports/generate` — accepts multipart/form-data (image file + analysis_json string), parses analysis into `SceneAnalysisResponse`, reads image bytes, calls `generate_report()`, returns PDF as `application/pdf` with `Content-Disposition: attachment` header.
+    - `GET /api/reports/health` — health check.
+  - Updated [`backend/src/hazsight/api/__init__.py`](backend/src/hazsight/api/__init__.py) — exports `router` from reports module. Documents how to include in FastAPI app.
+  - Created [`backend/src/hazsight/main.py`](backend/src/hazsight/main.py) — FastAPI app entry point. Run with `uvicorn hazsight.main:app --port 8000 --reload`. Includes CORS (allows frontend at `FRONTEND_URL` env var, default `http://localhost:3000`), includes the API router, has `/health` and `/` endpoints.
+  - Created [`frontend/TODO_BACKGROUND_CODE.md`](frontend/TODO_BACKGROUND_CODE.md) — design spec for Nikol Picková (UI/UX lead). Documents:
+    - Current state (code snippets "stuck" to screen, not blending with background)
+    - Design vision (blend with bg, fragments not whole snippets, per-char hover scale, mobile pulse, **typing animation** — random snippet gets rewritten char-by-char with `/` cursor every 8-15s)
+    - Technical context (component path, CSS classes, color palette, constraints)
+    - Instructions for Nikol to use https://chat.z.ai/ in Full Stack mode with GitHub PAT
+    - Acceptance criteria checklist
+- **Where**:
+  - [`backend/src/hazsight/ai/schemas.py`](backend/src/hazsight/ai/schemas.py) — added BoundingBox + bounding_box field on DetectedHazard
+  - [`backend/src/hazsight/reports/config.py`](backend/src/hazsight/reports/config.py) (NEW, ~100 lines)
+  - [`backend/src/hazsight/reports/image_annotator.py`](backend/src/hazsight/reports/image_annotator.py) (NEW, ~90 lines)
+  - [`backend/src/hazsight/reports/pdf_generator.py`](backend/src/hazsight/reports/pdf_generator.py) (NEW, ~280 lines)
+  - [`backend/src/hazsight/reports/__init__.py`](backend/src/hazsight/reports/__init__.py) (updated — exports)
+  - [`backend/src/hazsight/api/reports.py`](backend/src/hazsight/api/reports.py) (NEW, ~60 lines)
+  - [`backend/src/hazsight/api/__init__.py`](backend/src/hazsight/api/__init__.py) (updated — exports router)
+  - [`backend/src/hazsight/main.py`](backend/src/hazsight/main.py) (NEW, ~50 lines)
+  - [`frontend/TODO_BACKGROUND_CODE.md`](frontend/TODO_BACKGROUND_CODE.md) (NEW, ~120 lines — design spec for Nikol)
+- **Why**:
+  - User delegated UI/UX to Nikol ("ui a ux jsem delegoval nikole. muzem se postit do odbornejsi cinnosti") and asked for PDF generation ("muzem se pustit do toho pdf generation"). User specified: "pis ten kod tym stylem ad to funguje jakze se tam dosadi neaka hodnota a ad je to modulerni ze se na tom da stavet a upravovat to. jinak tohle je backend cili to delej na pythonu."
+  - Python (not TypeScript) because: ReportLab is already in dependencies, Pillow is already in dependencies, the backend is the "real" inference layer, and the user explicitly requested Python.
+  - Modular + parameterized because: the team (David, Honza) needs to be able to customize the report (colors, fonts, sections, layout) without modifying the generator code. ReportConfig dataclass makes this trivial.
+  - BoundingBox added to schemas because: the PDF generator needs hazard locations to draw bounding boxes on the annotated image. The VLM prompt (in nebius.ts on the frontend side) already asks for bounding_box, so the Python schema should match.
+  - main.py created because: the backend had no entry point — `uvicorn hazsight.api:app` wouldn't work without a proper FastAPI app instance. Now `uvicorn hazsight.main:app` works.
+  - TODO_BACKGROUND_CODE.md created because: user asked me to write a TODO for Nikol about the background code issue ("do todo soubouru nebo neceho takovyhu v tom repu napis ze v ramci ui to chce vyresit problem s tim ze ty kousky kodu jsou jakoby prilepeny na obrazovku"). Included the typing animation spec from the user's description.
+- **Verification**:
+  - Cannot run Python locally (env constrained to Next.js + Bun on port 3000). David or Honza must verify by running:
+    ```bash
+    cd backend
+    pip install -e .
+    uvicorn hazsight.main:app --port 8000 --reload
+    # Then test: curl http://localhost:8000/health
+    # Then test PDF: POST /api/reports/generate with an image + analysis JSON
+    ```
+  - Verified Python syntax by careful review — all imports resolve (reportlab, PIL, pydantic, fastapi are in pyproject.toml dependencies), all type hints are correct, all function signatures match their usage.
+  - The modular design means each section builder (`_build_header`, `_build_safety_score`, etc.) can be tested independently.
+
 ### [2026-10-21 15:55] - More code in bg + per-char scale hover + green scanline + checkerboard grid
 - **Agent**: Z.ai Code (assisting Šimon Čurda — direct user request)
 - **What**:

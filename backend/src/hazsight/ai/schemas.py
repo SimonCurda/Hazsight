@@ -29,6 +29,18 @@ class HazardCategory(str, Enum):
     OTHER = "OTHER"                             # Unclassified hazard
 
 
+class BoundingBox(BaseModel):
+    """Bounding box coordinates as percentages of image dimensions (0-100).
+
+    (0, 0) = top-left corner. x increases rightward, y increases downward.
+    Used to locate hazards on the image for annotation in the PDF report.
+    """
+    x: float = Field(ge=0, le=100, description="X position as percentage of image width")
+    y: float = Field(ge=0, le=100, description="Y position as percentage of image height")
+    width: float = Field(ge=0, le=100, description="Width as percentage of image width")
+    height: float = Field(ge=0, le=100, description="Height as percentage of image height")
+
+
 class DetectedHazard(BaseModel):
     """Individual hazard recognized in a visual frame."""
     category: HazardCategory = Field(description="Classified category of the hazard")
@@ -44,6 +56,10 @@ class DetectedHazard(BaseModel):
         ge=0.0,
         le=1.0,
         description="Model confidence score between 0.0 and 1.0",
+    )
+    bounding_box: Optional[BoundingBox] = Field(
+        default=None,
+        description="Bounding box coordinates as percentages 0-100. None if hazard is 'absence of something' (e.g., no fire extinguisher visible).",
     )
 
 
