@@ -105,12 +105,8 @@ export function LandingView({ onUploadClick }: LandingViewProps) {
       <section className="relative overflow-hidden border-b border-border/40">
         {/* Ambient gradient (breathing) */}
         <div className="absolute inset-0 -z-10 hazsight-ambient" aria-hidden />
-        {/* Grid background */}
-        <div className="absolute inset-0 -z-10 hazsight-grid-bg opacity-50" aria-hidden />
-        {/* Subtle scan line (slow) */}
-        <div className="absolute inset-0 -z-10 overflow-hidden" aria-hidden>
-          <div className="hazsight-scanline" style={{ animationDuration: '8s', opacity: 0.5 }} />
-        </div>
+        {/* Grid background — checkerboard pattern (both vertical + horizontal) */}
+        <div className="absolute inset-0 -z-10 hazsight-grid-bg opacity-60" aria-hidden />
 
         <div className="container mx-auto max-w-6xl px-4 py-24 md:py-36">
           <motion.div
