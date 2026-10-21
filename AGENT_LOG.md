@@ -21,6 +21,23 @@ Every agent is **required** to prepend a new entry to the [Action History](#acti
 
 ## Action History
 
+### [2026-10-21 19:15] - README rewrite — explicit hackathon-required sections + updated architecture + features list
+- **Agent**: Z.ai Code (assisting Šimon Čurda)
+- **What**:
+  - Rewrote README with three explicit sections required by hackathon submission rules:
+    - "How we use NVIDIA Nemotron" — tiered model architecture (Ultra = reasoning, Super = fast, VLM = image analysis), 5-step pipeline flow
+    - "How Nebius Token Factory accelerated our workflow" — OpenAI-compatible API, one key for 3 models, Builder Program credits, graceful fallback
+    - "Nebius tools used" — table with Token Factory + Tavily + AI Cloud
+  - Updated architecture diagram to reflect current state (Next.js API routes call Nebius directly — not via Python backend)
+  - Updated repo layout with all new files (tavily.ts, nebius.ts, job-store.ts, pdf-report.tsx, background-code.tsx, main.py, api/reports.py, etc.)
+  - Updated tech stack (added @react-pdf/renderer, openai SDK, Tavily)
+  - Updated quickstart (simplified — frontend only works now, no Python needed)
+  - Added Features section (upload, live trace, annotated image, risk list, regulation citations, PDF download, reasoning replay, demo image, background code, dark mode, responsive)
+  - Updated team table
+- **Where**: [README.md](README.md)
+- **Why**: Hackathon submission requires judges to see explicit "How we use NVIDIA Nemotron" + "How Token Factory accelerated our workflow" + "Nebius tools used" sections. The previous README was from the hybrid restructure commit and didn't have these explicit sections + was outdated (still mentioned mock data as the primary mode, didn't mention Tavily/PDF generation/background code).
+- **Verification**: File written. All links use repository-relative paths. No emojis (per AGENTS.md rules). English only (per AGENTS.md rules).
+
 ### [2026-10-21 19:00] - Tavily integration scaffolding — regulation citations per hazard category
 - **Agent**: Z.ai Code (assisting Šimon Čurda)
 - **What**:
