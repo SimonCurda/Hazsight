@@ -21,6 +21,34 @@ Every agent is **required** to prepend a new entry to the [Action History](#acti
 
 ## Action History
 
+### [2026-10-21 13:55] - QA cycle #1: Demo image button + empty state + safety score bar
+- **Agent**: Z.ai Code (15-min self-QA cron, job_id 470217)
+- **What**:
+  - Added "Try with a demo image" button to the upload view — lets users trigger the full flow (processing -> results) with mock data without uploading a real image. Critical for hackathon demo: judges can see the complete experience with one click, no file prep needed.
+  - Added empty state to [`RiskList`](frontend/src/components/hazsight/risk-list.tsx) — when `hazards.length === 0`, shows an emerald "All clear — no hazards detected" card with checkmark icon (instead of an empty list).
+  - Added visual safety score progress bar to [`ResultsView`](frontend/src/components/hazsight/results-view.tsx) — animated Framer Motion bar (0% -> score%) with severity-based color (red < 40, amber < 70, emerald >= 70) + risk level label ("HIGH RISK" / "MODERATE RISK" / "LOW RISK").
+  - New handler `handleTryDemo` in [`page.tsx`](frontend/src/app/page.tsx) sets `previewUrl` to `MOCK_IMAGE_URL` and switches to processing view immediately.
+  - New `Sparkles` icon import from `lucide-react` for the demo button.
+- **Where**:
+  - [`frontend/src/app/page.tsx`](frontend/src/app/page.tsx) (+32 lines: handleTryDemo, demo button UI with "or" divider)
+  - [`frontend/src/components/hazsight/risk-list.tsx`](frontend/src/components/hazsight/risk-list.tsx) (+31 lines: empty state card with CheckCircle2 icon)
+  - [`frontend/src/components/hazsight/results-view.tsx`](frontend/src/components/hazsight/results-view.tsx) (+23 lines: scoreBarColor, riskLevel, progress bar with motion.div)
+- **Why**:
+  - Hackathon judges will spend ~2 minutes per submission. A "Try with demo image" button removes the friction of finding/preparing a sample photo — they click once and see the full Hazsight flow in 30 seconds. This is the demo wow moment.
+  - Empty state for risk list handles the edge case where the AI correctly identifies no hazards — important for "Design" criterion (complete coherent product experience, not just happy path).
+  - Visual safety score bar makes the result immediately scannable — judges see "42/100 HIGH RISK" with a red bar before reading any text. Increases perceived polish.
+- **Verification**:
+  - Ran `bun run lint` — passes with zero errors.
+  - Tested full flow via `agent-browser`:
+    - Reload landing page (no errors, all elements render)
+    - Click "Upload a photo" -> upload view (verified: heading "Upload a photo for analysis", dropzone present, demo button present)
+    - Click "Try with a demo image" -> processing view (verified: heading "Analyzing your photo", dimmed image preview, live trace timeline emits 10 events over ~9s)
+    - After ~10s -> results view (verified: "Safety Audit Report" card with score 42/100 + HIGH RISK label + red progress bar, scene description, annotated image with 4 bounding boxes (CRITICAL red, HIGH orange, MEDIUM amber x2), risk list with 4 sorted hazard cards, "Download PDF" button, "Analyze another photo" reset button)
+    - Click hazard 1 bounding box -> risk list card highlights with amber ring
+    - Click "Analyze another photo" -> returns to landing
+  - No console errors throughout. Console only shows expected Fast Refresh / HMR messages.
+  - Screenshots captured: hazsight-processing-view.png (70KB), hazsight-results-view.png (187KB), hazsight-hazard-highlight.png (188KB).
+
 ### [2026-10-21 13:45] - Restructure to hybrid mono-repo + scaffold Next.js frontend
 - **Agent**: Z.ai Code (assisting Šimon Čurda)
 - **What**:

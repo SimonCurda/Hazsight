@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { motion } from 'framer-motion'
-import { AlertTriangle, MapPin, Lightbulb, Gauge } from 'lucide-react'
+import { AlertTriangle, MapPin, Lightbulb, Gauge, CheckCircle2 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
@@ -44,7 +44,31 @@ export function RiskList({
           Detected Hazards ({hazards.length})
         </h3>
       </div>
-      {sorted.map((hazard, idx) => {
+      {hazards.length === 0 ? (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4 }}
+        >
+          <Card className="border-emerald-500/40 bg-emerald-500/5">
+            <CardContent className="flex flex-col items-center gap-3 py-8 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10">
+                <CheckCircle2 className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div>
+                <p className="font-mono text-base font-semibold text-emerald-700 dark:text-emerald-300">
+                  All clear — no hazards detected
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  The scene appears to comply with safety standards.
+                  Continue regular monitoring to maintain this state.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      ) : (
+        sorted.map((hazard, idx) => {
         const colors = SEVERITY_COLORS[hazard.severity]
         const isSelected = selectedHazardId === hazard.id
         return (
@@ -101,7 +125,8 @@ export function RiskList({
             </Card>
           </motion.button>
         )
-      })}
+      })
+    )}
     </div>
   )
 }

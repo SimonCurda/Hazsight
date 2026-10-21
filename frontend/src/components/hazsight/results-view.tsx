@@ -30,6 +30,18 @@ export function ResultsView({ result, onReset }: ResultsViewProps) {
       : safetyScore < 70
         ? 'text-amber-600 dark:text-amber-400'
         : 'text-emerald-600 dark:text-emerald-400'
+  const scoreBarColor =
+    safetyScore < 40
+      ? 'bg-red-500'
+      : safetyScore < 70
+        ? 'bg-amber-500'
+        : 'bg-emerald-500'
+  const riskLevel =
+    safetyScore < 40
+      ? { label: 'HIGH RISK', color: 'text-red-600 dark:text-red-400' }
+      : safetyScore < 70
+        ? { label: 'MODERATE RISK', color: 'text-amber-600 dark:text-amber-400' }
+        : { label: 'LOW RISK', color: 'text-emerald-600 dark:text-emerald-400' }
 
   return (
     <motion.div
@@ -55,6 +67,17 @@ export function ResultsView({ result, onReset }: ResultsViewProps) {
               <div className={`font-mono text-3xl font-bold ${scoreColor}`}>
                 {safetyScore}
                 <span className="text-base text-muted-foreground">/100</span>
+              </div>
+              <div className={`mt-0.5 text-xs font-semibold uppercase tracking-wide ${riskLevel.color}`}>
+                {riskLevel.label}
+              </div>
+              <div className="mt-2 h-2 w-32 overflow-hidden rounded-full bg-muted">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${safetyScore}%` }}
+                  transition={{ duration: 0.8, ease: 'easeOut' }}
+                  className={`h-full ${scoreBarColor}`}
+                />
               </div>
             </div>
           </div>

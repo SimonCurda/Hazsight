@@ -7,6 +7,7 @@ import {
   Github,
   ExternalLink,
   ArrowLeft,
+  Sparkles,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -19,6 +20,7 @@ import { ResultsView } from '@/components/hazsight/results-view'
 import {
   MOCK_TRACE_EVENTS,
   MOCK_JOB_RESULT,
+  MOCK_IMAGE_URL,
   type TraceEvent,
   type JobResult,
 } from '@/lib/mock-data'
@@ -70,6 +72,13 @@ export default function Home() {
   }
 
   const handleAnalyze = () => {
+    setEvents([])
+    setResult(null)
+    setView('processing')
+  }
+
+  const handleTryDemo = () => {
+    setPreviewUrl(MOCK_IMAGE_URL)
     setEvents([])
     setResult(null)
     setView('processing')
@@ -169,6 +178,29 @@ export default function Home() {
               previewUrl={previewUrl}
               isUploading={false}
             />
+            <div className="mt-6 flex items-center justify-center">
+              <div className="flex flex-1 max-w-xs items-center">
+                <div className="h-px flex-1 bg-border" />
+                <span className="px-4 text-xs uppercase tracking-wide text-muted-foreground">
+                  or
+                </span>
+                <div className="h-px flex-1 bg-border" />
+              </div>
+            </div>
+            <div className="mt-6 text-center">
+              <Button
+                variant="outline"
+                size="lg"
+                className="gap-2"
+                onClick={handleTryDemo}
+              >
+                <Sparkles className="h-4 w-4 text-amber-500" />
+                Try with a demo image
+              </Button>
+              <p className="mt-2 text-xs text-muted-foreground">
+                See the full flow with a sample warehouse photo — no upload needed.
+              </p>
+            </div>
           </section>
         )}
 

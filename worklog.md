@@ -54,3 +54,53 @@ Unresolved issues / risks:
 - 4 teammates (Adam, Nikol, Matěj, František) not yet added as collaborators on GitHub repo — Šimon must add them via web UI.
 - Frontend not yet pushed to GitHub — will do in next batch.
 - IRL "Builders & Brews" event attendance not confirmed — affects $500 City Winner eligibility.
+
+---
+
+Task ID: hazsight-qa-cycle-1
+Agent: Z.ai Code (15-min self-QA cron, job_id 470217)
+Task: QA cycle #1 — read worklog, test Next.js frontend via agent-browser, fix bugs or add improvements, update worklog
+
+Work Log:
+- Read existing worklog.md to understand Day 1 state: Nebius compliance fix pushed (932a03a), hybrid mono-repo restructure + Next.js frontend scaffold pushed (9ba0e8b), CI workflow created, 15-min cron active.
+- Pulled latest from GitHub (no new commits, up to date with 9ba0e8b).
+- Opened http://localhost:3000 in agent-browser, verified landing page renders with no errors.
+- Tested mobile viewport (375x667 iPhone SE) — landing renders correctly (216KB screenshot).
+- Tested dark mode toggle — works correctly (243KB dark mode screenshot).
+- Tested upload view — state machine switches correctly.
+- Identified 3 improvement opportunities:
+  1. No "Try with demo image" button — judges need to see full flow without prep
+  2. No empty state for risk list when 0 hazards detected
+  3. Safety score shown as plain number, no visual progress bar
+- Implemented all 3 improvements:
+  - Added `handleTryDemo` handler + "Try with a demo image" button in page.tsx (+32 lines)
+  - Added empty state to risk-list.tsx (+31 lines, emerald card with CheckCircle2 icon)
+  - Added safety score progress bar + risk level label to results-view.tsx (+23 lines, animated Framer Motion bar)
+- Ran `bun run lint` — passes with 0 errors.
+- Tested full flow end-to-end via agent-browser:
+  - Landing -> Upload view (button click works)
+  - Upload view -> click "Try with a demo image" -> Processing view (verified: "Analyzing your photo" heading + dimmed image preview + live trace timeline emits 10 events over ~9s)
+  - Processing -> Results view (verified: Safety Audit Report card with 42/100 + HIGH RISK + red progress bar, scene description, annotated image with 4 bounding boxes, risk list with 4 sorted hazard cards)
+  - Click hazard 1 bounding box -> risk list card highlights with amber ring (works)
+  - Click "Analyze another photo" -> returns to landing (works)
+- No console errors throughout. Screenshots captured: hazsight-processing-view.png (70KB), hazsight-results-view.png (187KB), hazsight-hazard-highlight.png (188KB).
+- Synced 3 changed files from /home/z/my-project/ to /home/z/hazsight-clone/frontend/ via rsync.
+- Appended AGENT_LOG.md entry per AGENTS.md rules (English, no emojis, repository-relative links).
+- Committing + pushing to GitHub.
+
+Stage Summary:
+- Hazsight frontend now has a complete end-to-end demo flow: judges can click "Try with a demo image" on the upload view and see the full Hazsight experience (processing with live agent-trace timeline -> results with annotated image + risk list + PDF download) in ~30 seconds, no file prep needed.
+- RiskList handles empty hazards array with an emerald "All clear" card (edge case coverage for "Design" criterion).
+- ResultsView shows visual safety score progress bar + risk level label (HIGH/MODERATE/LOW RISK) — scannable in 1 second.
+- Full flow verified working in browser. Lint passes. Zero errors.
+- Branch protection still not enabled (PAT can't, user must do via web UI).
+- Backend (Python) still not wired to real Nebius API — David/Honza need to set up Nebius Builder Program access.
+
+Next priorities for next QA cycle:
+- Generate a real "messy warehouse" sample image via Image Generation skill (instead of Unsplash placeholder) for better demo
+- Add a "Replay trace" button in results view so users can re-watch the agent reasoning after the fact
+- Add tooltips on bounding boxes (hover shows full hazard description)
+- Add keyboard shortcuts (Esc to go back, number keys 1-4 to select hazards)
+- Add OpenGraph image for social sharing
+- Verify mobile responsiveness of results view (bounding boxes on small viewport)
+- When backend is ready, swap mock data for real API calls (NEXT_PUBLIC_BACKEND_URL)
