@@ -7,6 +7,7 @@
  */
 
 import type { DetectedHazard, JobResult, TraceEvent } from './mock-data'
+import type { RegulationCitation } from './tavily'
 
 interface Job {
   id: string
@@ -17,6 +18,7 @@ interface Job {
   hazards: DetectedHazard[] | null
   overallSafetyScore: number | null
   reportPdfUrl: string | null
+  regulations: RegulationCitation[] | null
   error: string | null
   createdAt: string
   completedAt: string | null
@@ -46,6 +48,7 @@ export function createJob(imageUrl: string, imageBase64: string | null = null): 
     hazards: null,
     overallSafetyScore: null,
     reportPdfUrl: null,
+    regulations: null,
     error: null,
     createdAt: new Date().toISOString(),
     completedAt: null,
@@ -78,6 +81,7 @@ export function completeJob(
     sceneDescription: string
     hazards: DetectedHazard[]
     overallSafetyScore: number
+    regulations?: RegulationCitation[]
   },
 ): void {
   const job = jobs.get(jobId)
@@ -85,6 +89,7 @@ export function completeJob(
   job.sceneDescription = result.sceneDescription
   job.hazards = result.hazards
   job.overallSafetyScore = result.overallSafetyScore
+  job.regulations = result.regulations || []
   job.reportPdfUrl = `/api/reports/${jobId}`
   job.status = 'completed'
   job.completedAt = new Date().toISOString()
@@ -116,6 +121,7 @@ export function toJobResult(job: Job): JobResult {
     hazards: job.hazards || [],
     overall_safety_score: job.overallSafetyScore || 0,
     report_pdf_url: job.reportPdfUrl,
+    regulations: job.regulations || [],
     created_at: job.createdAt,
     completed_at: job.completedAt,
   }

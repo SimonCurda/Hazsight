@@ -12,6 +12,7 @@
  */
 
 import type { HazardCategory, RiskSeverity } from './types'
+import type { RegulationCitation } from './tavily'
 
 export interface DetectedHazard {
   id: string
@@ -52,6 +53,7 @@ export interface JobResult {
   hazards: DetectedHazard[]
   overall_safety_score: number
   report_pdf_url: string | null
+  regulations: RegulationCitation[]
   created_at: string
   completed_at: string | null
 }
@@ -190,6 +192,32 @@ export const MOCK_JOB_RESULT: JobResult = {
   hazards: MOCK_HAZARDS,
   overall_safety_score: 42,
   report_pdf_url: '#demo-report-pdf',
+  regulations: [
+    {
+      hazard_category: 'UNAUTHORIZED_ZONE',
+      query: 'emergency exit blocked clearance regulation workplace safety',
+      results: [
+        {
+          title: 'vyhl. 246/2001 Sb. § 18 — Emergency exit clearance (Czech)',
+          url: 'https://www.zakonyprolidi.cz/cs/2001-246',
+          content: 'Emergency exits must maintain a minimum clear width of 0.8m at all times. No obstacles may be placed in the exit pathway.',
+          score: 0.98,
+        },
+      ],
+    },
+    {
+      hazard_category: 'FIRE_SMOKE',
+      query: 'fire safety regulation combustible materials near heat source workplace',
+      results: [
+        {
+          title: 'vyhl. 246/2001 Sb. § 12 — Fire prevention (Czech)',
+          url: 'https://www.zakonyprolidi.cz/cs/2001-246',
+          content: 'Combustible materials must be stored at a safe distance from heat sources. Minimum distance of 1.5m required.',
+          score: 0.97,
+        },
+      ],
+    },
+  ],
   created_at: new Date(Date.now() - 60_000).toISOString(),
   completed_at: new Date().toISOString(),
 }

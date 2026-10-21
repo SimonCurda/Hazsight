@@ -21,6 +21,23 @@ Every agent is **required** to prepend a new entry to the [Action History](#acti
 
 ## Action History
 
+### [2026-10-21 19:00] - Tavily integration scaffolding — regulation citations per hazard category
+- **Agent**: Z.ai Code (assisting Šimon Čurda)
+- **What**:
+  - Created `frontend/src/lib/tavily.ts` — Tavily Live Search client with:
+    - `searchRegulations()` — searches for safety regulations by hazard category
+    - `searchAllRegulations()` — deduplicates by category, returns RegulationCitation[]
+    - `tavilyAvailable()` — checks if TAVILY_API_KEY is set
+    - Mock fallback with pre-written citations (Czech regulations + EU directives + ISO standards) for each of 7 hazard categories
+    - Real Tavily API call when key is set (POST to api.tavily.com/search)
+  - Updated `mock-data.ts` — added `regulations: RegulationCitation[]` field to JobResult
+  - Updated `job-store.ts` — added `regulations` field to Job interface, `completeJob()` accepts optional regulations, `toJobResult()` includes regulations
+  - Updated `/api/analyze` route — after VLM detects hazards, calls `searchAllRegulations()` per hazard category. Adds `tavily_search` trace events ("Found: vyhl. 246/2001 Sb. § 18 —..."). Passes regulations to `completeJob()`. Works in both mock fallback path AND real Nebius path.
+  - Updated `.env.example` — added `TAVILY_API_KEY` with documentation
+- **Where**: `frontend/src/lib/tavily.ts` (NEW), `frontend/src/lib/mock-data.ts`, `frontend/src/lib/job-store.ts`, `frontend/src/app/api/analyze/route.ts`, `frontend/.env.example`
+- **Why**: User asked to scaffold Tavily so it's ready when they have an API key. Tavily gives $3,000 Best Use of Tavily bonus + shows real tool use (web search for regulation citations) + makes the PDF report more credible with real regulation references.
+- **Verification**: Lint passes. curl test: POST → job completed with 4 hazards + 4 regulation citations (one per unique hazard category). Each citation has title, URL, content, score. PDF still works (HTTP 200, 5541 bytes, valid %PDF).
+
 ### [2026-10-21 18:35] - PDF: eliminate ALL green text on white background
 - **Agent**: Z.ai Code (assisting Šimon Čurda — direct user request)
 - **What**:

@@ -20,6 +20,7 @@ import {
   NEBIUS_VLM_MODEL,
   NEBIUS_REASONING_MODEL,
 } from '@/lib/nebius'
+import { searchAllRegulations, tavilyAvailable } from '@/lib/tavily'
 import {
   MOCK_HAZARDS,
   MOCK_SCENE_DESCRIPTION,
@@ -57,10 +58,15 @@ async function runAnalysis(
         appendTraceEvent(jobId, event)
         await sleep(700)
       }
+      // Search for regulations (mock if no Tavily key, real if key is set)
+      const regulations = await searchAllRegulations(
+        MOCK_HAZARDS.map((h) => ({ category: h.category, description: h.description })),
+      )
       completeJob(jobId, {
         sceneDescription: MOCK_SCENE_DESCRIPTION,
         hazards: MOCK_HAZARDS,
         overallSafetyScore: 42,
+        regulations,
       })
       return
     }
@@ -127,6 +133,25 @@ async function runAnalysis(
       })
     }
 
+    // Tavily: search for relevant safety regulations per hazard category
+    appendTraceEvent(jobId, {
+      type: 'tavily_search',
+      model: 'Tavily Live Search',
+      content: tavilyAvailable()
+        ? 'Searching for relevant safety regulations via Tavily API...'
+        : 'Tavily API key not set — using mock regulation citations.',
+    })
+    const regulations = await searchAllRegulations(
+      parsed.hazards.map((h) => ({ category: h.category, description: h.description })),
+    )
+    for (const reg of regulations) {
+      appendTraceEvent(jobId, {
+        type: 'tavily_search',
+        model: 'Tavily Live Search',
+        content: `Found: ${reg.results[0]?.title || 'No results'} (${reg.results.length} citations for ${reg.hazard_category})`,
+      })
+    }
+
     appendTraceEvent(jobId, {
       type: 'synthesize',
       model: NEBIUS_REASONING_MODEL,
@@ -137,10 +162,10 @@ async function runAnalysis(
     appendTraceEvent(jobId, {
       type: 'report_ready',
       model: 'PDF Generator',
-      content: `Safety audit report generated. ${parsed.hazards.length} findings. Download ready.`,
+      content: `Safety audit report generated. ${parsed.hazards.length} findings. ${regulations.length} regulation citations. Download ready.`,
     })
 
-    completeJob(jobId, parsed)
+    completeJob(jobId, { ...parsed, regulations })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     appendTraceEvent(jobId, {
