@@ -157,3 +157,30 @@ Next priorities for QA cycle 3:
 - Add loading skeleton during processing (instead of just spinner)
 - Add a "Share results" button (copy URL or export image)
 - When backend is ready, swap mock for real API calls
+
+---
+
+Task ID: hazsight-ui-iterations
+Agent: Z.ai Code (assisting Šimon Čurda — direct user requests)
+Task: UI redesign iterations — futuristic HUD → refined big-tech → NVIDIA green → background code + checkerboard
+
+Work Log:
+- Commit `95dd8b8`: Futuristic industrial HUD redesign — removed generic "AI wrapper" aesthetic (looked like Omniparse copy), added industrial HUD theme: dark mode default, monospace everywhere, grid + dot matrix backgrounds, scan line on hero, HUD corner brackets on cards, terminal-style headings + buttons (`> HAZSIGHT`, `[ INITIATE_SCAN ]`), `SYSTEM_ONLINE` status badge, terminal mockup for tech stack section, amber + red color palette.
+- Commit `a29e98c`: Refined big-tech aesthetic — user feedback said remove `SYSTEM_ONLINE` badge (too try-hard), use spaces instead of underscores, make it look like big tech company. Removed SYSTEM_ONLINE badge, refined color palette (deeper dark + refined amber), mixed Geist Sans (body) + Geist Mono (code-y bits), replaced ALL_CAPS_WITH_UNDERSCORES with proper case (`INITIATE_SCAN` → `[ Initiate scan ]`), kept `>` and `[ ]` aesthetic but used sparingly, added Framer Motion `whileInView` scroll-triggered fade-ins + ambient breathing gradient + hover-lift on cards, more whitespace (py-24/py-32).
+- Commit `107dc63`: NVIDIA-green palette + animated background code — user feedback asked for green palette (like NVIDIA) + motion graphics in background + actual code snippets that respond to hover per-character. Changed palette from amber to NVIDIA-green (`lime-500` = `oklch(0.78 0.19 124)` ≈ NVIDIA `#76b900`). Created `BackgroundCode` component (fixed position, behind all content) with 10 code snippets from actual codebase (TypeScript from nebius.ts, Python from schemas.py, API endpoint paths, comments). Each character rendered as `<span class="bg-code-char">` for per-character hover: lifts (`translateY(-3px)`) + glows green on hover; subtle pulse on no-hover / mobile (more visible since no hover available); slow horizontal drift; respects `prefers-reduced-motion`. Added BackgroundCode to layout.tsx so it renders on all pages. Removed `bg-background` from page.tsx root div so BackgroundCode shows through transparent areas.
+- Commit `157aec6`: More code + per-char scale hover + green scanline + checkerboard grid — user feedback asked for: (1) more code in background, (2) per-char scale on hover (not just lift), (3) scanline is yellow + disruptive (fix), (4) background should be checkerboard (add horizontal lines). Increased snippets from 10 to 22 (added 12 new from actual codebase). Added `scale(1.2)` to hover transform (each letter individually enlarges). Fixed scanline: green color (was amber), max opacity 0.4 (was 1.0), reduced glow (6px/0.15 vs 12px/0.6), height 1px (was 2px), animation 10s (was 6s), **removed scanline from hero entirely**. Fixed grid bg: green-tinted (was warm white), 28x28px (was 32x32px — denser), opacity 60% in landing (was 50%), both vertical AND horizontal lines clearly visible as proper checkerboard.
+- All commits pushed to GitHub. AGENT_LOG.md entries appended (4 entries for the 4 commits — user noticed I had skipped AGENT_LOG updates and asked me to fix it).
+- All verified via `bun run lint` (0 errors) + `agent-browser` (no console errors, screenshots captured at each iteration).
+
+Stage Summary:
+- Frontend UI evolved through 4 iterations based on direct user feedback: generic → futuristic HUD → refined big-tech → NVIDIA green + background code + checkerboard.
+- Current state: NVIDIA-green palette, animated background code (22 snippets from actual codebase) with per-character hover (scale 1.2 + lift + green glow), checkerboard grid background (both directions visible), no disruptive scanline, `>` and `[ ]` command-style aesthetic used sparingly, Framer Motion scroll-triggered fade-ins, ambient breathing gradient, hover-lift on cards.
+- Real Nebius Token Factory integration (commit `febcede`) is live — `/api/analyze` route calls Nebius VLM (Llama 3.2 Vision) + Nemotron 3 Ultra when `NEBIUS_API_KEY` is set, falls back to mock data when not set.
+- 10 commits total on GitHub main: `932a03a` → `157aec6`.
+
+Next priorities:
+- Redesign upload view, processing view, results view to match the new NVIDIA-green + background-code aesthetic (currently still old style — visible style transition when navigating from landing to upload).
+- User needs to set up Nebius Builder Program account + get API key for real VLM analysis (currently using mock fallback).
+- Add 4 missing GitHub collaborators (Adam, Nikol, Matěj, František) via web UI.
+- Enable branch protection on main via web UI (PAT can't, insufficient Administration scope).
+- 15-min self-QA cron (job_id 470217) continues running — will keep iterating on UI + features.

@@ -21,6 +21,129 @@ Every agent is **required** to prepend a new entry to the [Action History](#acti
 
 ## Action History
 
+### [2026-10-21 15:55] - More code in bg + per-char scale hover + green scanline + checkerboard grid
+- **Agent**: Z.ai Code (assisting Šimon Čurda — direct user request)
+- **What**:
+  - Increased background code snippets from 10 to 22 (added 12 new snippets from actual codebase: `class SceneAnalysisResponse(BaseModel)`, `overall_safety_score: int = Field(ge=0, le=100)`, `bounding_box: { x, y, width, height }`, `> /api/jobs/[id]/trace GET ?since=<timestamp>`, `client = OpenAI({ baseURL: ... })`, `// trace events emit as API calls progress`, `NEBIUS_API_KEY = os.environ.get(...)`, `> best_apps_and_agents_track`, `appendTraceEvent(jobId, { type: 'vlm_detect', ... })`, `// graceful fallback if NEBIUS_API_KEY not set`, `response.choices[0].message.content`, `> npm_open_source_models_on_nebius`).
+  - Updated per-character hover effect: added `scale(1.2)` to transform (was just `translateY(-3px)`). Each letter now individually enlarges on hover in addition to lifting + glowing green.
+  - Fixed scanline: changed color from amber `oklch(0.75 0.18 65)` to green `oklch(0.78 0.17 125)`, reduced max opacity from 1.0 to 0.4, reduced glow (box-shadow from 12px/0.6 to 6px/0.15), reduced height from 2px to 1px, slowed animation from 6s to 10s. **Removed scanline from hero section entirely** — user reported it was "lehce disruptive" (slightly distracting).
+  - Fixed grid background: changed color from warm white `oklch(0.96 0.005 60 / 0.04)` to green `oklch(0.78 0.17 125 / 0.08)`, reduced size from 32x32px to 28x28px (denser checkerboard), increased opacity in landing from 50% to 60%. Both vertical AND horizontal lines now clearly visible as a proper checkerboard pattern.
+- **Where**:
+  - [`frontend/src/app/globals.css`](frontend/src/app/globals.css) — scanline color/opacity/glow/height/animation, grid bg color/size, hover transform scale
+  - [`frontend/src/components/hazsight/background-code.tsx`](frontend/src/components/hazsight/background-code.tsx) — added 12 new snippets (total 22), updated positions
+  - [`frontend/src/components/hazsight/landing-view.tsx`](frontend/src/components/hazsight/landing-view.tsx) — removed scanline from hero, increased grid opacity to 60%
+- **Why**:
+  - User feedback: "i would put more of the code into the background. pak udelej ze kdyz prez to hovernu tak ze se to treba trosku zvetsi kazdy to pismenko individualne. chapes? potom jak tam jezdi ta lajna tak ta je zluta a asi je lehce disruptive. potom to pozadi bych udelal jako checkeredze bych tam k tem svislejm carab tak bych k nim dal jeste vodorovny"
+  - More code in background reinforces the "this is a real product built on real code" feel — judges can see actual function names, model names, API paths.
+  - Per-character scale on hover makes the interaction more playful + tactile — each letter responds individually, giving a sense of "the code is alive".
+  - Yellow scanline was a leftover from the old amber palette — didn't match the new green theme and drew too much attention. Removing it lets the BackgroundCode be the primary motion element.
+  - Checkerboard grid (both directions clearly visible) reinforces the technical/engineering aesthetic.
+- **Verification**:
+  - Ran `bun run lint` — passes with 0 errors.
+  - Tested via agent-browser: screenshot 369KB (full page with 22 background code snippets visible), screenshot 336KB (after mouse hover over background code area). No console errors. No hydration mismatches.
+
+### [2026-10-21 15:20] - NVIDIA-green palette + animated background code with per-char hover
+- **Agent**: Z.ai Code (assisting Šimon Čurda — direct user request)
+- **What**:
+  - Changed color palette from amber to NVIDIA-green: `lime-500` in Tailwind is `oklch(0.78 0.19 124)` — almost exactly NVIDIA's `#76b900`. Replaced all `amber-*` references with `lime-*` in landing-view.tsx (15 references) + page.tsx (7 references). Background deepened from `oklch(0.05 0 0)` to `oklch(0.04 0 0)`.
+  - Created [`frontend/src/components/hazsight/background-code.tsx`](frontend/src/components/hazsight/background-code.tsx) — new BackgroundCode component (fixed position, behind all content, z-index: -10). Contains 10 code snippets from actual Hazsight codebase:
+    - `const vlm = await analyzeImageWithVlm(imageBase64, 'image/png')` (from nebius.ts)
+    - `> nebius.tokenfactory.nebius.com/v1/` (endpoint)
+    - `model: "nvidia/nemotron-3-ultra"` (from config.py)
+    - `// detecting hazards...` (comment)
+    - `hazards: List[DetectedHazard] = Field(default_factory=list)` (from schemas.py)
+    - `severity: RiskSeverity  # LOW | MEDIUM | HIGH | CRITICAL` (from schemas.py)
+    - `> /api/analyze  POST  image -> nebius_vlm -> nemotron_ultra` (API route)
+    - `for (const hazard of parsed.hazards) { appendTraceEvent(...) }` (from route.ts)
+    - `// compliance: runs_on_nebius_token_factory` (comment)
+    - `class HazardCategory(str, Enum): ...` (from schemas.py)
+  - Each snippet positioned absolutely across the viewport with slight rotation.
+  - Each CHARACTER rendered as a `<span class="bg-code-char">` for per-character hover detection.
+  - Hover (desktop): character lifts (`translateY(-3px)`) + glows green (text-shadow + color shift to `lime-400`).
+  - No-hover (background or mobile): subtle pulse (opacity 0.18-0.28 desktop, 0.22-0.38 mobile — more visible on mobile since hover isn't available).
+  - Slow horizontal drift (20s, 4px — barely perceptible).
+  - Respects `prefers-reduced-motion` (disables all animations).
+  - Added new CSS utility classes in [`frontend/src/app/globals.css`](frontend/src/app/globals.css): `.bg-code-char` (per-char span with transition), `@keyframes bg-code-pulse-desktop` / `bg-code-pulse-mobile` / `bg-code-drift`, `@media (hover: hover)` / `@media (hover: none)` / `@media (prefers-reduced-motion: reduce)`.
+  - Added BackgroundCode to [`frontend/src/app/layout.tsx`](frontend/src/app/layout.tsx) so it renders on all pages.
+  - Removed `bg-background` from root div in [`frontend/src/app/page.tsx`](frontend/src/app/page.tsx) so BackgroundCode shows through transparent areas.
+- **Where**:
+  - [`frontend/src/app/globals.css`](frontend/src/app/globals.css) — new green palette + bg-code CSS classes
+  - [`frontend/src/components/hazsight/background-code.tsx`](frontend/src/components/hazsight/background-code.tsx) (NEW, ~150 lines)
+  - [`frontend/src/app/layout.tsx`](frontend/src/app/layout.tsx) — imported + rendered BackgroundCode
+  - [`frontend/src/app/page.tsx`](frontend/src/app/page.tsx) — removed bg-background from root div
+  - [`frontend/src/components/hazsight/landing-view.tsx`](frontend/src/components/hazsight/landing-view.tsx) — amber → lime (15 references)
+- **Why**:
+  - User feedback: "motion graphics i na pozadi a jako vic lean into the command style s tim > a / atd. treba do pozadi to dat a i jako neakej kod (mozna kousky naseho actual kodu ktery treba trochu vystoupnou (myslim jenom pismnka) kdyz prez ne uzivatel prejede kurzorem... i barevnou paletu zmen. mozna necos s zelenou (trochu jako nvidia treba?"
+  - NVIDIA green ties to the hackathon (Nebius x NVIDIA) and works as a "safe" color in a safety-inspector context. Different from the previous amber — fresh + on-brand.
+  - Actual code in background reinforces "this is a real product built on real code" — judges see real function names, not generic placeholders.
+  - Per-character hover makes the background interactive without being intrusive — code "comes alive" when you engage with it.
+  - Mobile fallback (more visible pulse) ensures the motion is perceptible on touch devices where hover isn't available.
+- **Verification**:
+  - Ran `bun run lint` — passes with 0 errors.
+  - Tested via agent-browser: screenshot 351KB (vs 84KB before — significantly larger, confirming background code is rendering). No console errors. Mobile viewport (375x667) tested — background code visible with more pronounced pulse.
+
+### [2026-10-21 15:10] - Refined big-tech aesthetic — sans/mono mix, subtle motion, no caps
+- **Agent**: Z.ai Code (assisting Šimon Čurda — direct user request)
+- **What**:
+  - REMOVED the `SYSTEM_ONLINE · NEBIUS_X_NVIDIA_HACKATHON` badge from hero (was too try-hard, looked like a generic AI wrapper).
+  - Refined color palette: deeper dark `oklch(0.05 0 0)` for bg, refined amber `oklch(0.78 0.15 70)` for accent, pure white `oklch(0.97 0 0)` text — more sophisticated than previous aggressive amber.
+  - Mixed typography: Geist Sans for body + Geist Mono for code-y bits (`>`, `[ ]`, `//`, version numbers). Big-tech companies mix both.
+  - Replaced ALL_CAPS_WITH_UNDERSCORES with proper case text everywhere:
+    - `INITIATE_SCAN` -> `[ Initiate scan ]`
+    - `VIEW_SOURCE` -> `View source`
+    - `GITHUB_REPOSITORY` -> `GitHub repository`
+    - `PROCESS_FLOW` -> `Process`
+    - `HAZARD_CATEGORIES` -> `What Hazsight detects`
+  - Kept the code-y aesthetic but used sparingly: `>` prefix before Hazsight title, `[ Initiate scan ]` buttons with brackets, `// Process` / `// Detection` / `// Infrastructure` section labels, `[01]...[08]` numbering on hazard types.
+  - Added subtle motion graphics via Framer Motion: `whileInView` fade-in on each section + card (staggered, 0.1s delay), `cubic-bezier(0.22, 1, 0.36, 1)` easing for smooth feel.
+  - New CSS utility classes: `.hazsight-ambient` (breathing radial gradient, 12s ease-in-out loop), `.hazsight-hover-lift` (translateY -2px + box-shadow on hover), `.hazsight-glow-hover` (amber glow on hover), `html { scroll-behavior: smooth }`.
+  - More whitespace: `py-24` / `py-32` / `py-36` between sections (was `py-20`).
+  - Cleaner cards: subtle borders (`border-border/60`), removed aggressive HUD corner brackets on most cards (kept `.hazsight-hud` class for selective use).
+  - Refined CTA section: `ShieldCheck` icon in glowing circle, single button, more breathing room.
+- **Where**:
+  - [`frontend/src/app/globals.css`](frontend/src/app/globals.css) — refined .dark palette + new utility classes (.hazsight-ambient, .hazsight-hover-lift, .hazsight-glow-hover, scroll-behavior)
+  - [`frontend/src/components/hazsight/landing-view.tsx`](frontend/src/components/hazsight/landing-view.tsx) — full redesign (removed SYSTEM_ONLINE badge, proper case text, Framer Motion whileInView animations, more whitespace)
+  - [`frontend/src/app/page.tsx`](frontend/src/app/page.tsx) — header + footer terminal style with proper case text (HAZSIGHT -> Hazsight, PROCESS -> Process, GITHUB_REPOSITORY -> GitHub repository)
+- **Why**:
+  - User feedback: "zmen colour palette, tohledej urcite pric: SYSTEM_ONLINE NEBIUS_X_NVIDIA_HACKATHON. pak se mi ale na druhou stranu docela libi > a ty kodovy veci. do kdyby jsi je dal neak hezky do posadi a aby to bylo i jako motion graphics a bylo to reaktivni ad je to hezky, ale ne preplacany. pak asi jako mezery pouzivej misto tech podtrzitrek. udelej to ad to vypada jako od velky a znamy firmy"
+  - Big-tech company aesthetic (Apple/Stripe/Vercel quality) requires: refined palette, mixed typography, proper case text, subtle motion (not overdone), more whitespace.
+  - The `>` and `[ ]` code aesthetic was kept because the user said they like it — but used sparingly so it doesn't feel try-hard.
+  - Underscores replaced with spaces because ALL_CAPS_WITH_UNDERSCORES feels like a developer debug screen, not a polished product.
+- **Verification**:
+  - Ran `bun run lint` — passes with 0 errors.
+  - Tested via agent-browser: screenshot 84KB (vs 208KB before — much cleaner with more whitespace). No SYSTEM_ONLINE badge (verified via snapshot). All text in proper case. `>`, `[ ]`, `//` code elements used sparingly. Zero console errors.
+
+### [2026-10-21 14:50] - Futuristic industrial HUD redesign — no more generic AI wrapper
+- **Agent**: Z.ai Code (assisting Šimon Čurda — direct user request)
+- **What**:
+  - Redesigned landing page + header + footer from generic "AI wrapper" aesthetic to industrial HUD / sci-fi safety inspector vibe.
+  - Dark mode set as default (`defaultTheme="dark"` in layout.tsx ThemeProvider).
+  - Background deepened from `oklch(0.145 0 0)` to `oklch(0.09 0 0)` (darker, more industrial).
+  - Monospace (`Geist Mono`) applied everywhere via `.hazsight-readout` class — terminal feel.
+  - Added grid pattern background (`.hazsight-grid-bg` — 32px grid) + dot matrix (`.hazsight-dot-bg`) on hero + sections.
+  - Added scan line animation on hero (`.hazsight-scanline` — horizontal scan line with amber glow, 6s loop).
+  - Added HUD corner brackets on cards (`.hazsight-hud` — L-shape borders via `::before` / `::after` pseudo-elements).
+  - Tech readout style: `> HAZSIGHT` heading (with `>` prefix), `[ INITIATE_SCAN ]` button (with brackets), `SYSTEM_ONLINE · NEBIUS_X_NVIDIA_HACKATHON` status badge with animated ping dot, `// PROCESS_FLOW` / `// DETECTION_CATALOG` / `// SYSTEM_STACK` section labels.
+  - Hazard categories list with `[01]...[08]` numbering.
+  - Tech stack section styled as terminal output (3 dots + `hazsight@nebius:~$ cat ./config/stack.txt` path + stack items + compliance line).
+  - Footer with `// compliance: MIT_LICENSED · RUNS_ON_NEBIUS_TOKEN_FACTORY · ...` comment-style line.
+  - Glow effects (`.hazsight-glow-amber` / `.hazsight-glow-red` — box-shadow with amber/red glow) on critical elements.
+  - Color palette: amber + red on dark (no indigo/blue per system rule).
+  - New CSS utility classes: `.hazsight-grid-bg`, `.hazsight-dot-bg`, `.hazsight-hud`, `.hazsight-scanline`, `.hazsight-vscanline`, `.hazsight-glow-amber` / `.hazsight-glow-red`, `.hazsight-readout`, `.hazsight-terminal-prompt`, `.hazsight-blink`, `.hazsight-pulse`, `.hazsight-scroll` (tech scrollbar).
+- **Where**:
+  - [`frontend/src/app/globals.css`](frontend/src/app/globals.css) — rewrote `.dark` palette + new utility classes
+  - [`frontend/src/components/hazsight/landing-view.tsx`](frontend/src/components/hazsight/landing-view.tsx) — full redesign (industrial HUD aesthetic, terminal-style headings + buttons, scan line on hero, HUD corner brackets on cards, terminal mockup for tech stack section)
+  - [`frontend/src/app/page.tsx`](frontend/src/app/page.tsx) — header + footer terminal style (HAZSIGHT logo with HUD border, PROCESS / HAZARDS nav, GITHUB_REPOSITORY / HACKATHON_PAGE footer links, compliance comment line)
+- **Why**:
+  - User feedback: "udelej to ui jak nevypada jako ukradeny z myho projektu omniparse. udelej to treba vic jako futuristic/tech"
+  - Previous design was generic "AI wrapper" aesthetic (gradient title, centered hero, 3-card features) — looked like a copy of the user's Omniparse project. Needed a distinct visual identity.
+  - Industrial HUD / sci-fi safety inspector theme matches the product (a safety inspection AI) and differentiates from generic AI wrappers.
+  - Terminal/monospace aesthetic reinforces "this is a technical product for technical users (facility managers, safety officers)".
+  - Amber + red color palette chosen because: amber = hazard/warning (matches safety context), red = critical (matches severity). No indigo/blue per system rule.
+- **Verification**:
+  - Ran `bun run lint` — initially had 5 errors (`react/jsx-no-comment-textnodes` for `// TEXT` patterns in JSX). Fixed by wrapping in `{'// TEXT'}` via perl substitution. Final lint passes with 0 errors.
+  - Tested via agent-browser: landing renders with new theme (screenshot 208KB). Click `[ INITIATE_SCAN ]` -> upload view (still old style, will redesign later). Click "Try with a demo image" -> processing -> results (screenshot 428KB). No console errors.
+
 ### [2026-10-21 14:35] - Real Nebius Token Factory integration (Next.js API routes)
 - **Agent**: Z.ai Code (assisting Šimon Čurda — direct user request)
 - **What**:
