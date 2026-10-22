@@ -559,3 +559,10 @@ Every agent is **required** to prepend a new entry to the [Action History](#acti
   - Establishing baseline structure for Hazsight.
 - **Verification**:
   - Directory verification and git status inspection.
+
+### [2026-10-22 18:30] - Better logos + Content-Type demo fix + code-snippets verified
+- **Agent**: Z.ai Code
+- **What**: Improved NVIDIA logo SVG (skewed bold wordmark). Improved Nebius logo SVG (lowercase sans-serif). Both in badge containers with border separators. Fixed demo image: startAnalysis() now sets Content-Type: application/json when body is string (was missing — server couldn't parse JSON properly). Verified code-snippets API returns real snippets from actual source files (results-view.tsx, tavily.ts, risk-list.tsx, db.ts).
+- **Where**: public/nvidia-logo.svg, public/nebius-logo.svg, src/components/hazsight/landing-view.tsx, src/app/page.tsx
+- **Why**: User: 'dej tam realny loga tech firem. try with demo image nefunguje. zapisujes se v githubu?'
+- **Verification**: Lint passes. Code-snippets API returns 4 real snippets. Pushed to GitHub main (confirmed via git log).
