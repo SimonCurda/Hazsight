@@ -54,19 +54,38 @@ async function runAnalysis(
 
     if (!nebiusAvailable()) {
       // Fallback: emit mock trace events over time, then complete with mock data.
+      // Skip pre-written tavily_search events — we emit accurate ones below
+      // so the trace reflects whether Tavily is actually live or in mock mode.
       for (const event of MOCK_TRACE_EVENTS.slice(1)) {
+        if (event.type === 'tavily_search') continue
         appendTraceEvent(jobId, event)
         await sleep(700)
       }
+      // Emit accurate Tavily status (live if key is set, mock otherwise)
+      appendTraceEvent(jobId, {
+        type: 'tavily_search',
+        model: 'Tavily Live Search',
+        content: tavilyAvailable()
+          ? 'Searching for relevant safety regulations via Tavily API...'
+          : 'Tavily API key not set — using mock regulation citations.',
+      })
       // Search for regulations (mock if no Tavily key, real if key is set)
       const regulations = await searchAllRegulations(
         MOCK_HAZARDS.map((h) => ({ category: h.category, description: h.description })),
       )
+      for (const reg of regulations) {
+        appendTraceEvent(jobId, {
+          type: 'tavily_search',
+          model: 'Tavily Live Search',
+          content: `Found: ${reg.results[0]?.title || 'No results'} (${reg.results.length} citations for ${reg.hazard_category})`,
+        })
+      }
       completeJob(jobId, {
         sceneDescription: MOCK_SCENE_DESCRIPTION,
         hazards: MOCK_HAZARDS,
         overallSafetyScore: 42,
         regulations,
+        tavilyLive: tavilyAvailable(),
       })
       return
     }
@@ -165,7 +184,7 @@ async function runAnalysis(
       content: `Safety audit report generated. ${parsed.hazards.length} findings. ${regulations.length} regulation citations. Download ready.`,
     })
 
-    completeJob(jobId, { ...parsed, regulations })
+    completeJob(jobId, { ...parsed, regulations, tavilyLive: tavilyAvailable() })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     appendTraceEvent(jobId, {

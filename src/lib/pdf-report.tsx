@@ -21,10 +21,12 @@ import {
   Page,
   View,
   Text,
+  Link,
   Image as PdfImage,
   StyleSheet,
 } from '@react-pdf/renderer'
 import type { DetectedHazard } from './mock-data'
+import type { RegulationCitation } from './tavily'
 
 // NVIDIA green brand color
 const BRAND = '#76b900'
@@ -63,19 +65,19 @@ function formatCategory(category: string): string {
 // Score colors — darker for readability on white background
 const SCORE_COLORS: Record<string, string> = {
   CRITICAL: '#dc2626', // red-600
-  HIGH: '#ea580c',      // orange-600
-  LOW: '#047857',       // emerald-700 (darker — was emerald-600)
+  HIGH: '#d97706',      // amber-600 (was orange-600 — aligned with results view)
+  LOW: '#047857',       // emerald-700
 }
 
 function riskLevel(score: number): string {
-  if (score < 40) return 'HIGH RISK'
-  if (score < 70) return 'MODERATE RISK'
+  if (score < 50) return 'HIGH RISK'
+  if (score < 75) return 'MODERATE RISK'
   return 'LOW RISK'
 }
 
 function scoreColor(score: number): string {
-  if (score < 40) return SCORE_COLORS.CRITICAL
-  if (score < 70) return SCORE_COLORS.HIGH
+  if (score < 50) return SCORE_COLORS.CRITICAL
+  if (score < 75) return SCORE_COLORS.HIGH
   return SCORE_COLORS.LOW
 }
 
@@ -194,12 +196,46 @@ const styles = StyleSheet.create({
     fontSize: 7,
     color: '#999',
   },
+  citationCategory: {
+    fontFamily: 'Courier-Bold',
+    fontSize: 8,
+    color: BRAND,
+    marginTop: 8,
+    marginBottom: 2,
+  },
+  citationItem: {
+    fontSize: 8,
+    color: '#333',
+    marginBottom: 4,
+    paddingLeft: 8,
+    borderLeftWidth: 2,
+    borderLeftColor: '#ddd',
+    borderLeftStyle: 'solid',
+  },
+  citationTitle: {
+    fontFamily: 'Courier-Bold',
+    fontSize: 8,
+    color: '#1a4a7a',
+    textDecoration: 'underline',
+  },
+  citationUrl: {
+    fontSize: 7,
+    color: '#888',
+    marginTop: 1,
+  },
+  citationContent: {
+    fontSize: 7.5,
+    color: '#555',
+    lineHeight: 1.4,
+    marginTop: 2,
+  },
 })
 
 interface PdfReportProps {
   score: number
   sceneDescription: string
   hazards: DetectedHazard[]
+  regulations: RegulationCitation[]
   imageData: string | null // base64 data URL or null
   jobId: string
   createdAt: string
@@ -216,6 +252,7 @@ export function PdfReport({
   score,
   sceneDescription,
   hazards,
+  regulations,
   imageData,
   jobId,
   createdAt,
@@ -328,6 +365,40 @@ export function PdfReport({
           <Text style={styles.footerText}>{'// page 1'}</Text>
         </View>
       </Page>
+
+      {/* Page 2: Regulations & Citations (only if there are any) */}
+      {regulations.length > 0 && (
+        <Page size="A4" style={styles.page}>
+          <Text style={styles.sectionLabel}>
+            {'// Regulations & Citations (' + regulations.length + ' categories)'}
+          </Text>
+          <Text style={[styles.body, { marginBottom: 8, color: '#666' }]}>
+            Sourced via Tavily Live Search · cross-referenced with EU directives, Czech regulations, and ISO standards.
+          </Text>
+          {regulations.map((reg) => (
+            <View key={reg.hazard_category} wrap={false}>
+              <Text style={styles.citationCategory}>
+                {formatCategory(reg.hazard_category)}
+              </Text>
+              {reg.results.map((r, idx) => (
+                <View key={idx} style={styles.citationItem}>
+                  <Link src={r.url} style={styles.citationTitle}>
+                    {r.title}
+                  </Link>
+                  <Text style={styles.citationUrl}>{r.url}</Text>
+                  <Text style={styles.citationContent}>{r.content}</Text>
+                </View>
+              ))}
+            </View>
+          ))}
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>
+              {'// MIT licensed · Runs on Nebius Token Factory · NVIDIA Nemotron'}
+            </Text>
+            <Text style={styles.footerText}>{'// page 2'}</Text>
+          </View>
+        </Page>
+      )}
     </Document>
   )
 }

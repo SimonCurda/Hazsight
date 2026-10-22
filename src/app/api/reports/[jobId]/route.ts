@@ -65,6 +65,7 @@ export async function GET(
       score: job.overallSafetyScore || 0,
       sceneDescription: job.sceneDescription,
       hazards: job.hazards,
+      regulations: job.regulations || [],
       imageData,
       jobId: job.id,
       createdAt: job.createdAt,

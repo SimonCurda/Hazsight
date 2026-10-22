@@ -54,6 +54,7 @@ export interface JobResult {
   overall_safety_score: number
   report_pdf_url: string | null
   regulations: RegulationCitation[]
+  tavily_live: boolean
   created_at: string
   completed_at: string | null
 }
@@ -218,6 +219,7 @@ export const MOCK_JOB_RESULT: JobResult = {
       ],
     },
   ],
+  tavily_live: false,
   created_at: new Date(Date.now() - 60_000).toISOString(),
   completed_at: new Date().toISOString(),
 }

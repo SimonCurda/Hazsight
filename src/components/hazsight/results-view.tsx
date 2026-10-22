@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { motion } from 'framer-motion'
-import { Download, RotateCcw, ShieldAlert, FileText, Brain, ChevronDown, Keyboard } from 'lucide-react'
+import { Download, RotateCcw, ShieldAlert, FileText, Brain, ChevronDown, Keyboard, Gavel, ExternalLink, Search } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -16,6 +16,7 @@ import { AnnotatedImage } from './annotated-image'
 import { RiskList } from './risk-list'
 import { TraceTimeline } from './trace-timeline'
 import { SEVERITY_ORDER } from './risk-list'
+import { HAZARD_CATEGORY_LABELS } from '@/lib/types'
 import type { JobResult, TraceEvent } from '@/lib/mock-data'
 
 interface ResultsViewProps {
@@ -27,6 +28,7 @@ interface ResultsViewProps {
 export function ResultsView({ result, events, onReset }: ResultsViewProps) {
   const [selectedHazardId, setSelectedHazardId] = React.useState<string | null>(null)
   const [traceOpen, setTraceOpen] = React.useState(false)
+  const [regsOpen, setRegsOpen] = React.useState(false)
   const [hintVisible, setHintVisible] = React.useState(true)
 
   const handleHazardClick = (id: string) => {
@@ -62,6 +64,12 @@ export function ResultsView({ result, events, onReset }: ResultsViewProps) {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [sortedHazards, onReset])
+
+  // Whether Tavily ran live (real API call) or in mock mode (pre-written citations).
+  // Set server-side in the job result based on whether TAVILY_API_KEY was set.
+  const tavilyLive = result.tavily_live
+  const regulations = result.regulations || []
+  const totalCitations = regulations.reduce((sum, r) => sum + r.results.length, 0)
 
   const safetyScore = result.overall_safety_score
   // Traffic-light semantics: red = danger, amber = caution, emerald = safe
@@ -192,6 +200,104 @@ export function ResultsView({ result, events, onReset }: ResultsViewProps) {
           selectedHazardId={selectedHazardId}
         />
       </div>
+
+      {/* Regulations & Citations — Tavily web search results */}
+      {regulations.length > 0 && (
+        <Collapsible
+          open={regsOpen}
+          onOpenChange={setRegsOpen}
+          className="rounded-xl border border-border/60 bg-card/50"
+        >
+          <CollapsibleTrigger asChild>
+            <button className="flex w-full items-center justify-between gap-3 px-6 py-4 text-left transition-colors hover:bg-muted/30">
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-lime-500/10 text-lime-600 dark:text-lime-400">
+                  <Gavel className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="font-mono text-sm font-semibold uppercase tracking-wide text-foreground">
+                    Regulations &amp; Citations
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    {totalCitations} citation{totalCitations === 1 ? '' : 's'} across {regulations.length} hazard categor{regulations.length === 1 ? 'y' : 'ies'} — sourced via{' '}
+                    {tavilyLive ? (
+                      <span className="font-semibold text-lime-600 dark:text-lime-400">Tavily Live Search</span>
+                    ) : (
+                      <span className="font-semibold text-amber-600 dark:text-amber-400">mock citations</span>
+                    )}
+                    .
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                {tavilyLive ? (
+                  <Badge variant="outline" className="gap-1 border-lime-500/40 text-lime-600 dark:text-lime-400">
+                    <span className="h-1.5 w-1.5 rounded-full bg-lime-500 animate-pulse" />
+                    LIVE
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="gap-1 border-amber-500/40 text-amber-600 dark:text-amber-400">
+                    MOCK
+                  </Badge>
+                )}
+                <motion.div
+                  animate={{ rotate: regsOpen ? 180 : 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="text-muted-foreground"
+                >
+                  <ChevronDown className="h-4 w-4" />
+                </motion.div>
+              </div>
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="space-y-5 border-t border-border/60 px-6 py-4">
+              {regulations.map((reg) => (
+                <div key={reg.hazard_category} className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="secondary" className="font-mono text-[10px] uppercase tracking-wide">
+                      {HAZARD_CATEGORY_LABELS[reg.hazard_category as keyof typeof HAZARD_CATEGORY_LABELS] || reg.hazard_category}
+                    </Badge>
+                    <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                      <Search className="h-3 w-3" />
+                      <span className="font-mono">{reg.query}</span>
+                    </span>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {reg.results.map((r, idx) => (
+                      <a
+                        key={idx}
+                        href={r.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group rounded-lg border border-border/60 bg-background/50 p-3 transition-all hover:border-lime-500/40 hover:bg-lime-500/5"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="line-clamp-2 text-xs font-medium leading-snug text-foreground group-hover:text-lime-600 dark:group-hover:text-lime-400">
+                            {r.title}
+                          </p>
+                          <ExternalLink className="mt-0.5 h-3 w-3 flex-shrink-0 text-muted-foreground/60 group-hover:text-lime-500" />
+                        </div>
+                        <p className="mt-1.5 line-clamp-3 text-[10px] leading-relaxed text-muted-foreground">
+                          {r.content}
+                        </p>
+                        <div className="mt-2 flex items-center justify-between">
+                          <span className="font-mono text-[9px] text-muted-foreground/70 truncate max-w-[70%]">
+                            {new URL(r.url).hostname}
+                          </span>
+                          <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[9px] text-muted-foreground">
+                            {Math.round(r.score * 100)}% match
+                          </span>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
 
       {/* Replay trace — expandable reasoning timeline */}
       {events.length > 0 && (
