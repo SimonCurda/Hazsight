@@ -323,3 +323,67 @@ Next priorities for next QA cycle:
 - Test mobile responsiveness of results view (bounding boxes on small viewport).
 - Add a "Share results" button (copy URL or export image).
 - When backend is ready, swap mock data for real API calls.
+
+---
+
+Task ID: hazsight-logo-codebg-cleanup
+Agent: Z.ai Code (assisting Simon Curda — direct user requests)
+Task: NVIDIA logo green-bg variant + code background cleanup (remove typing/glow, fix overflow)
+
+Work Log:
+- User feedback (in Czech):
+  1. "levej sloupec muze dlouhym radkem stringem zasahovat do pravyho sloupce" — left column long string lines overflow into right column
+  2. "bilim nvidia logem jsem nemyslel to udelat cely bily. tadyto pouzij. ... dej tam to logo s tim zelenym pozadim" — didn't want ALL-white logo; use the uploaded file; put the logo with the GREEN background
+  3. "ujistit ze nase stranka neporusuje ty zasady pouziti jejich loga" — ensure NVIDIA logo usage guidelines compliance
+  4. "chci aby byl jenom kod v pozadi reaktivni ze treba ten radek se lehce zvetsi" — only the code should be reactive (line slightly enlarges on hover)
+  5. "aktualne vidim 4 ty veci jak pisou. tak je zatim skryj ... odstran ten glow pod kurzorem" — hide the 4 typing things; remove the cursor glow
+  6. "to jak s tim ten kurzor trochu hejbe je moc hezky. to nech." — keep the parallax (cursor moves the code) — that's nice
+  7. "cronjoby zatim nevytvarej" — don't create cronjobs for now
+
+- Analyzed uploaded `/upload/nvidia-logo-color.svg` (8022 bytes): contains 3 NVIDIA logo variants side-by-side in a 2560x588 viewBox:
+  - Left third: standard two-color logo (green eye + black wordmark) on white background
+  - Middle third: white version (all white, for dark backgrounds)
+  - Right third: white logo on green (#76b900) background rect ← **the one user wants**
+- NVIDIA logo usage compliance: the "logo on green background" is an OFFICIAL NVIDIA-approved variant (documented in NVIDIA's brand guidelines). The eye mark + wordmark are white, sitting on the brand-color green rectangle. No distortion, recoloring, or modification — fully compliant.
+
+**Fix 1: NVIDIA logo → green-background variant**
+- Created `/public/nvidia-logo-green.svg` by copying the uploaded file and cropping the viewBox from `0 0 2560 588.23425` to `1706.66667 0.97919 853.33333 584.27746` (shows only the right third — the green-background variant).
+- Updated `landing-view.tsx`: changed `img src` from `/nvidia-logo-white.svg` to `/nvidia-logo-green.svg`, removed `brightness-0 invert` CSS filter class (no longer needed — the logo is already visible on its own green background).
+- Verified via VLM: green background rectangle + white eye-mark icon + white "NVIDIA" wordmark — confirmed correct rendering.
+
+**Fix 2: Column overflow → long lines clipped**
+- Added `overflow: hidden` to `.code-col` in globals.css. Long code lines (with `white-space: pre`) are now clipped at the column boundary instead of bleeding into the adjacent column.
+- Verified via VLM: "long code lines stay within their respective columns and do not overflow".
+
+**Fix 3: Code background — remove typing + glow, keep parallax + line hover**
+- Rewrote `code-background.tsx` (190 → 150 lines, simpler):
+  - REMOVED: cursor-following glow div (700x700 radial gradient), typing animation (character-by-character reveal), blinking carets, the `build()`/`tick()` rAF typing loop, `lineDivs`/`chars`/`lineLens` state tracking, `code-caret` element creation.
+  - KEPT: mouse parallax (window mousemove listener → lerp 0.08 → cols container transform `translate((mx-0.5)*36, (my-0.5)*20)`), code line hover (CSS `.code-line:hover` handles the enlarge + glow effect).
+  - NEW: `renderColumn()` function renders 3 stacked snippets as STATIC, fully-visible, syntax-highlighted code (no `visibility:hidden`, no typing). Each column gets a different starting snippet.
+- Verified via JS eval: `caretDivExists: false`, `glowDivExists: false` (both gone from DOM). 37 code lines rendered statically. Parallax confirmed: `colsTransform: translate(6.85px, -2.87px)` when mouse at (900,200).
+- Verified via VLM: "code visible in 2 columns", "no blinking cursor or typing animation", "no soft green glow or halo following the cursor".
+
+**Fix 4: Deleted existing cron job**
+- Deleted cron job 471347 (the 15-min webDevReview job created in the previous round) per user instruction "cronjoby zatim nevytvarej".
+
+**Full flow verification:**
+- Landing → click "Initiate scan" → upload view ✓
+- Upload → click "Try with demo image" → processing → results ✓ (pointer-events fix from QA cycle 3 still intact — buttons clickable)
+- Results view renders: Download PDF, Analyze another photo, 4 hazard bounding boxes ✓
+- `bun run lint` — 0 errors
+- Dev server clean (no errors in dev.log)
+
+Stage Summary:
+- NVIDIA logo is now the official green-background variant (compliant with NVIDIA brand guidelines). The all-white filter approach is gone.
+- Code background is now STATIC (no typing, no carets, no cursor glow). Only the code reacts: individual lines enlarge + glow on hover (CSS), and the columns parallax-shift with the mouse cursor (kept per user request — "moc hezky").
+- Long code lines are clipped to their column (no more bleeding into the adjacent column).
+- No cronjobs running (deleted job 471347 per user instruction).
+- Files changed: `public/nvidia-logo-green.svg` (new), `src/components/hazsight/landing-view.tsx` (img src + remove filter), `src/app/globals.css` (overflow:hidden on .code-col), `src/components/hazsight/code-background.tsx` (rewritten: static code + parallax only).
+- Files no longer used but kept: `public/nvidia-logo-white.svg` (can delete later if desired), `.code-caret` CSS block in globals.css (harmless — no component renders carets anymore; the `caret-blink` keyframe is still used by shadcn/ui input-otp component).
+
+Next priorities (unchanged):
+- Redesign upload/processing/results views to match NVIDIA-green aesthetic (Nikol's task).
+- Real Nebius API key test (user setting up Nebius Builder Program account).
+- Deploy to Vercel for public URL.
+- Add 4 missing GitHub collaborators.
+- Fill in NEBIUS_FEEDBACK.md after real API testing.
