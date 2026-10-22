@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { motion } from 'framer-motion'
-import { Download, RotateCcw, ShieldAlert, FileText, Brain, ChevronDown } from 'lucide-react'
+import { Download, RotateCcw, ShieldAlert, FileText, Brain, ChevronDown, Keyboard } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -15,6 +15,7 @@ import {
 import { AnnotatedImage } from './annotated-image'
 import { RiskList } from './risk-list'
 import { TraceTimeline } from './trace-timeline'
+import { SEVERITY_ORDER } from './risk-list'
 import type { JobResult, TraceEvent } from '@/lib/mock-data'
 
 interface ResultsViewProps {
@@ -26,29 +27,67 @@ interface ResultsViewProps {
 export function ResultsView({ result, events, onReset }: ResultsViewProps) {
   const [selectedHazardId, setSelectedHazardId] = React.useState<string | null>(null)
   const [traceOpen, setTraceOpen] = React.useState(false)
+  const [hintVisible, setHintVisible] = React.useState(true)
 
   const handleHazardClick = (id: string) => {
     setSelectedHazardId((prev) => (prev === id ? null : id))
   }
 
+  // Sorted hazards (same ordering as RiskList uses) for keyboard shortcut indexing
+  const sortedHazards = React.useMemo(
+    () => [...result.hazards].sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]),
+    [result.hazards],
+  )
+
+  // Keyboard shortcuts: Esc → reset, 1-9 → select hazard by index
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't interfere with typing in inputs
+      const target = e.target as HTMLElement
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return
+
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        onReset()
+      } else if (e.key >= '1' && e.key <= '9') {
+        const idx = parseInt(e.key, 10) - 1
+        const hazard = sortedHazards[idx]
+        if (hazard) {
+          e.preventDefault()
+          handleHazardClick(hazard.id)
+          setHintVisible(false)
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [sortedHazards, onReset])
+
   const safetyScore = result.overall_safety_score
+  // Traffic-light semantics: red = danger, amber = caution, emerald = safe
   const scoreColor =
-    safetyScore < 40
+    safetyScore < 50
       ? 'text-red-600 dark:text-red-400'
-      : safetyScore < 70
-        ? 'text-lime-600 dark:text-lime-400'
+      : safetyScore < 75
+        ? 'text-amber-600 dark:text-amber-400'
         : 'text-emerald-600 dark:text-emerald-400'
   const scoreBarColor =
-    safetyScore < 40
+    safetyScore < 50
       ? 'bg-red-500'
-      : safetyScore < 70
-        ? 'bg-lime-500'
+      : safetyScore < 75
+        ? 'bg-amber-500'
         : 'bg-emerald-500'
+  const scoreBarGlow =
+    safetyScore < 50
+      ? 'shadow-[0_0_12px_rgba(239,68,68,0.6)]'
+      : safetyScore < 75
+        ? 'shadow-[0_0_12px_rgba(245,158,11,0.5)]'
+        : 'shadow-[0_0_12px_rgba(16,185,129,0.5)]'
   const riskLevel =
-    safetyScore < 40
+    safetyScore < 50
       ? { label: 'HIGH RISK', color: 'text-red-600 dark:text-red-400' }
-      : safetyScore < 70
-        ? { label: 'MODERATE RISK', color: 'text-lime-600 dark:text-lime-400' }
+      : safetyScore < 75
+        ? { label: 'MODERATE RISK', color: 'text-amber-600 dark:text-amber-400' }
         : { label: 'LOW RISK', color: 'text-emerald-600 dark:text-emerald-400' }
 
   return (
@@ -84,7 +123,7 @@ export function ResultsView({ result, events, onReset }: ResultsViewProps) {
                   initial={{ width: 0 }}
                   animate={{ width: `${safetyScore}%` }}
                   transition={{ duration: 0.8, ease: 'easeOut' }}
-                  className={`h-full ${scoreBarColor}`}
+                  className={`h-full ${scoreBarColor} ${scoreBarGlow}`}
                 />
               </div>
             </div>
@@ -96,7 +135,7 @@ export function ResultsView({ result, events, onReset }: ResultsViewProps) {
               <ShieldAlert className="h-3 w-3 text-lime-500" />
               {result.hazards.length} hazards detected
             </Badge>
-            <Button size="sm" variant="outline" className="gap-1.5" asChild>
+            <Button size="sm" variant="outline" className="gap-1.5 hazsight-glow-hover" asChild>
               <a href={result.report_pdf_url || '#'} download>
                 <Download className="h-3.5 w-3.5" />
                 Download PDF
@@ -106,6 +145,12 @@ export function ResultsView({ result, events, onReset }: ResultsViewProps) {
               <RotateCcw className="h-3.5 w-3.5" />
               Analyze another photo
             </Button>
+            {hintVisible && sortedHazards.length > 0 && (
+              <span className="ml-auto hidden items-center gap-1.5 rounded-md border border-lime-500/30 bg-lime-500/5 px-2 py-1 text-[10px] text-muted-foreground sm:inline-flex">
+                <Keyboard className="h-3 w-3 text-lime-500" />
+                Press <kbd className="rounded bg-muted px-1 font-mono text-[9px] text-foreground">1</kbd>–<kbd className="rounded bg-muted px-1 font-mono text-[9px] text-foreground">{Math.min(9, sortedHazards.length)}</kbd> to select · <kbd className="rounded bg-muted px-1 font-mono text-[9px] text-foreground">Esc</kbd> to reset
+              </span>
+            )}
           </div>
         </CardContent>
       </Card>

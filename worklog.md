@@ -252,3 +252,74 @@ Next priorities (unchanged from prior worklog):
 - Add 4 missing GitHub collaborators (Adam, Nikol, Matej, Frantisek) via web UI.
 - Nikol redesign upload/processing/results views to match NVIDIA-green + background-code aesthetic.
 - Fill in NEBIUS_FEEDBACK.md after real API testing.
+
+---
+
+Task ID: hazsight-qa-cycle-3
+Agent: Z.ai Code (15-min self-QA cron, job_id 471347)
+Task: QA cycle #3 — read worklog, test frontend, fix bugs + add features + improve styling, update worklog
+
+Work Log:
+- Read worklog.md — understood prior state (3 CodeBackground + NVIDIA logo fixes from hazsight-codebg-fix-3). Project is stable: landing → upload → processing → results flow works end-to-end with mock data.
+- Performed full-flow QA via agent-browser (fresh session):
+  - Landing → click "Initiate scan" → upload view (verified)
+  - Upload → click "Try with demo image" → **CRITICAL BUG: click intercepted by `.code-cols` (code background had `pointer-events: auto` on the cols/col containers, blocking button clicks)**
+  - Worked around by snapshot+ref to confirm processing view renders
+  - Waited ~12s → results view renders with annotated image, 4 hazards, reasoning trace
+
+**Critical Bug Found + Fixed: pointer-events blocking button clicks**
+- Root cause: `.code-layer` (position: fixed, z-index: 0) is visually ABOVE page content (which is in normal flow). The `.code-col` had `pointer-events: auto !important` in CSS (4 places: base, 1280px media, mobile media, reduced-motion media). The inline styles on `.code-cols` and `.code-col` also set `pointerEvents: "auto"`. This meant the entire code background area captured clicks, blocking the "Try with demo image" button (and likely other buttons).
+- Fix:
+  - `globals.css`: Added `pointer-events: none` to `.code-layer`. Removed `pointer-events: auto !important` from `.code-col` (4 places). Added `pointer-events: auto` to `.code-line` so individual lines can still be hovered (the glow effect) but empty space lets clicks pass through to page content.
+  - `code-background.tsx`: Removed `pointerEvents: "auto"` from inline styles on `.code-cols` container and both `.code-col` divs.
+- Verified: after fix, clicking "Initiate scan" → upload → "Try with demo image" → processing → results works in one fluid flow. No more "Element is covered by `<div.code-cols>`" errors.
+
+**Styling Improvements (mandatory):**
+1. **Score color scheme — traffic-light semantics** (`results-view.tsx`):
+   - Old: `< 40` HIGH (red), `< 70` MODERATE (lime), `>= 70` LOW (emerald). A score of 42 showed a GREEN bar labeled MODERATE — confusing (green = good in most contexts, but 42/100 is poor).
+   - New: `< 50` HIGH (red), `< 75` MODERATE (amber), `>= 75` LOW (emerald). Score 42 now shows RED bar + HIGH RISK label — correct urgency signal.
+   - Added matching glow on the progress bar (red glow for HIGH, amber for MODERATE, emerald for LOW).
+2. **CRITICAL hazard cards — glowing red border + slow pulse** (`risk-list.tsx` + `globals.css`):
+   - CRITICAL cards now have `border-red-500/60` + `shadow-[0_0_20px_-4px_rgba(239,68,68,0.5)]` + `animate-pulse-slow` (3s cycle, subtle but urgent).
+   - Added `@keyframes pulse-slow` + `.animate-pulse-slow` CSS class.
+   - Verified via VLM: CRITICAL card has "distinct glowing red border" that stands out.
+3. **Hover/selected borders use severity colors** (`risk-list.tsx`):
+   - Old: hover border was always lime, selected ring was always lime.
+   - New: added `SEVERITY_BORDER` lookup table with static Tailwind classes (JIT can't analyze dynamic class names). CRITICAL → red, HIGH → orange, MEDIUM → lime, LOW → emerald. Each card's hover/selected state matches its severity.
+4. **Hover glow on Download PDF button** (`results-view.tsx`):
+   - Added `hazsight-glow-hover` class to the Download PDF button (green glow on hover, matching the landing page CTA style).
+5. **Keyboard shortcuts hint** (`results-view.tsx`):
+   - Added a subtle hint badge showing "Press 1-4 to select · Esc to reset" with `<kbd>` styled keys. Auto-hides after the user presses a number key.
+
+**New Features (mandatory):**
+1. **Keyboard shortcuts** (`results-view.tsx`):
+   - `Esc` → calls `onReset()` (returns to landing).
+   - `1`-`9` → selects the Nth hazard (sorted by severity, same order as the risk list). Toggling the same key deselects.
+   - Uses `window.addEventListener('keydown', ...)`. Ignores key events when target is an INPUT/TEXTAREA (so typing in form fields isn't hijacked).
+   - Verified via agent-browser: pressed "1" → CRITICAL card got red ring (selected). Pressed "2" → HIGH card got orange ring. Pressed Escape → returned to landing.
+2. **Tooltips on bounding boxes** (`annotated-image.tsx` + `globals.css`):
+   - Hovering a hazard bounding box now shows a floating tooltip with: severity badge, category label, full description text, affected area (with MapPin icon), confidence %, and "click to pin" hint.
+   - Tooltip auto-flips below the box if the box is too close to the top edge (`flipDown` based on `bounding_box.y < 18`).
+   - Used pure CSS hover (`.hazsight-tooltip-trigger:hover .hazsight-tooltip`) instead of Tailwind's `group-hover:` — Tailwind's group-hover wasn't applying reliably in this context (verified the class was present but opacity stayed 0). Pure CSS works reliably.
+   - Verified via JS eval: tooltip opacity goes 0 → 1 on hover. Verified via VLM: floating tooltip visible on image with hazard details.
+
+**Verification:**
+- `bun run lint` passes with 0 errors.
+- Dev server runs clean (no errors in dev.log).
+- Full flow verified via agent-browser: landing → upload → demo image → processing → results. All views render correctly.
+- VLM-confirmed: red score + HIGH RISK label, red progress bar with glow, CRITICAL card glowing border, keyboard hint visible, tooltip on bounding box.
+- JS-eval-confirmed: keyboard shortcuts (1, 2, Esc) all work; tooltip opacity transitions 0 → 1 on hover.
+
+Stage Summary:
+- **1 critical bug fixed**: code background no longer blocks button clicks (pointer-events: none on layer/col, auto only on lines). Full demo flow works in one click-chain now.
+- **5 styling improvements**: traffic-light score colors, CRITICAL glowing border + pulse, severity-matched hover/selected borders, button hover glow, keyboard hint badge.
+- **2 new features**: keyboard shortcuts (Esc + 1-9), hover tooltips on bounding boxes with full hazard details.
+- Files changed: `src/app/globals.css` (pointer-events fix + pulse-slow keyframe + tooltip CSS), `src/components/hazsight/code-background.tsx` (remove pointerEvents inline), `src/components/hazsight/results-view.tsx` (score colors + keyboard shortcuts + glow + hint), `src/components/hazsight/risk-list.tsx` (export SEVERITY_ORDER + SEVERITY_BORDER lookup + critical border), `src/components/hazsight/annotated-image.tsx` (tooltips + flip-down logic).
+
+Next priorities for next QA cycle:
+- Redesign upload view + processing view to match NVIDIA-green + background-code aesthetic (visible style transition from landing → upload currently — Nikol was assigned this).
+- Add OpenGraph image for social sharing.
+- Add loading skeleton during processing (instead of just spinner).
+- Test mobile responsiveness of results view (bounding boxes on small viewport).
+- Add a "Share results" button (copy URL or export image).
+- When backend is ready, swap mock data for real API calls.

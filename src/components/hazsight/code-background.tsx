@@ -304,12 +304,11 @@ export default function CodeBackground() {
           display: "flex",
           gap: "2rem",
           justifyContent: "center",
-          pointerEvents: "auto",
           willChange: "transform",
         }}
       >
-        <div className="code-col" ref={leftRef} style={{ flex: "1 1 0", minWidth: 0, maxWidth: "400px", display: "block", pointerEvents: "auto" }} />
-        <div className="code-col" ref={rightRef} style={{ flex: "1 1 0", minWidth: 0, maxWidth: "400px", transform: "translateY(-36px)", display: "block", pointerEvents: "auto" }} />
+        <div className="code-col" ref={leftRef} style={{ flex: "1 1 0", minWidth: 0, maxWidth: "400px", display: "block" }} />
+        <div className="code-col" ref={rightRef} style={{ flex: "1 1 0", minWidth: 0, maxWidth: "400px", transform: "translateY(-36px)", display: "block" }} />
       </div>
     </div>
   );

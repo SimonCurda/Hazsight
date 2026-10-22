@@ -14,11 +14,34 @@ import {
 import { SEVERITY_COLORS, HAZARD_CATEGORY_LABELS } from '@/lib/types'
 import type { DetectedHazard } from '@/lib/mock-data'
 
-const SEVERITY_ORDER: Record<DetectedHazard['severity'], number> = {
+export const SEVERITY_ORDER: Record<DetectedHazard['severity'], number> = {
   CRITICAL: 0,
   HIGH: 1,
   MEDIUM: 2,
   LOW: 3,
+}
+
+// Static Tailwind class lookup (JIT can't analyze dynamic class names)
+const SEVERITY_BORDER: Record<
+  DetectedHazard['severity'],
+  { hover: string; selected: string }
+> = {
+  CRITICAL: {
+    hover: 'hover:border-red-500/70',
+    selected: 'border-red-500 ring-1 ring-red-500/40',
+  },
+  HIGH: {
+    hover: 'hover:border-orange-500/60',
+    selected: 'border-orange-500 ring-1 ring-orange-500/40',
+  },
+  MEDIUM: {
+    hover: 'hover:border-lime-500/60',
+    selected: 'border-lime-500 ring-1 ring-lime-500/40',
+  },
+  LOW: {
+    hover: 'hover:border-emerald-500/60',
+    selected: 'border-emerald-500 ring-1 ring-emerald-500/40',
+  },
 }
 
 interface RiskListProps {
@@ -71,6 +94,8 @@ export function RiskList({
         sorted.map((hazard, idx) => {
         const colors = SEVERITY_COLORS[hazard.severity]
         const isSelected = selectedHazardId === hazard.id
+        const isCritical = hazard.severity === 'CRITICAL'
+        const borderClasses = SEVERITY_BORDER[hazard.severity]
         return (
           <motion.button
             key={hazard.id}
@@ -82,8 +107,11 @@ export function RiskList({
           >
             <Card
               className={cn(
-                'cursor-pointer transition-all hover:border-lime-500/50',
-                isSelected && 'border-lime-500 ring-1 ring-lime-500/30',
+                'cursor-pointer transition-all',
+                borderClasses.hover,
+                isSelected && borderClasses.selected,
+                // CRITICAL: always-on glowing red border + slow pulse for urgency
+                isCritical && 'border-red-500/60 shadow-[0_0_20px_-4px_rgba(239,68,68,0.5)] animate-pulse-slow',
               )}
             >
               <CardHeader className="pb-3">

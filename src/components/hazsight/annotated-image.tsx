@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { motion } from 'framer-motion'
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, MapPin } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { SEVERITY_COLORS, HAZARD_CATEGORY_LABELS } from '@/lib/types'
@@ -35,6 +35,8 @@ export function AnnotatedImage({
       {visibleHazards.map((hazard, idx) => {
         const colors = SEVERITY_COLORS[hazard.severity]
         const isSelected = selectedHazardId === hazard.id
+        // Flip the tooltip below the box if it's too close to the top edge
+        const flipDown = hazard.bounding_box.y < 18
         return (
           <motion.button
             key={hazard.id}
@@ -44,9 +46,9 @@ export function AnnotatedImage({
             onClick={() => onHazardClick?.(hazard.id)}
             aria-label={`Hazard ${idx + 1}: ${HAZARD_CATEGORY_LABELS[hazard.category]} — ${hazard.severity}`}
             className={cn(
-              'absolute cursor-pointer rounded-md border-2 transition-all',
+              'group hazsight-tooltip-trigger absolute cursor-pointer rounded-md border-2 transition-all',
               colors.box,
-              isSelected ? 'z-20 ring-2 ring-offset-2 ring-offset-black/50' : 'z-10 hover:z-20',
+              isSelected ? 'z-20 ring-2 ring-offset-2 ring-offset-black/50' : 'z-10 hover:z-30',
             )}
             style={{
               left: `${hazard.bounding_box.x}%`,
@@ -56,16 +58,47 @@ export function AnnotatedImage({
               boxShadow: isSelected ? `0 0 0 2px var(--color-lime-500)` : undefined,
             }}
           >
+            {/* Always-visible badge: severity + index */}
             <span
               className={cn(
-                'absolute -top-7 left-0 flex items-center gap-1 whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide',
+                'absolute left-0 flex items-center gap-1 whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide',
                 colors.badge,
+                flipDown ? '-top-7' : '-bottom-7',
               )}
             >
               <AlertTriangle className="h-2.5 w-2.5" />
               {hazard.severity}
               <span className="opacity-80">·</span>
               {idx + 1}
+            </span>
+
+            {/* Hover tooltip: full hazard description — pure CSS hover via .hazsight-tooltip-trigger */}
+            <span
+              className={cn(
+                'hazsight-tooltip pointer-events-none absolute left-0 z-40 w-64 max-w-[80vw] rounded-lg border border-border/80 bg-popover/95 p-3 text-left shadow-2xl backdrop-blur-sm',
+                flipDown ? 'top-full mt-3' : 'bottom-full mb-3',
+              )}
+            >
+              <span className="flex items-center gap-1.5">
+                <span className={cn('rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide', colors.badge)}>
+                  {hazard.severity}
+                </span>
+                <span className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+                  {HAZARD_CATEGORY_LABELS[hazard.category]}
+                </span>
+              </span>
+              <span className="mt-1.5 block text-xs leading-relaxed text-foreground">
+                {hazard.description}
+              </span>
+              {hazard.affected_area && (
+                <span className="mt-1.5 flex items-start gap-1 text-[10px] text-muted-foreground">
+                  <MapPin className="mt-0.5 h-2.5 w-2.5 flex-shrink-0" />
+                  {hazard.affected_area}
+                </span>
+              )}
+              <span className="mt-1.5 block text-[10px] text-muted-foreground/80">
+                {Math.round(hazard.confidence * 100)}% confidence · click to pin
+              </span>
             </span>
           </motion.button>
         )
