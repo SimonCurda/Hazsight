@@ -206,3 +206,49 @@ Stage Summary:
 - After each fragment: hold → fade → new random fragment.
 - Opacity 0.25 (visible but not distracting).
 - "hazsight_" text clickable → landing. Eye → hover → team popover.
+
+---
+
+Task ID: hazsight-codebg-fix-3
+Agent: Z.ai Code (assisting Simon Curda — direct user requests)
+Task: Fix 3 CodeBackground + NVIDIA logo issues reported by user
+
+Work Log:
+- User reported 3 issues (in Czech):
+  1. "pořád je to nereaktivní" — CodeBackground still not reactive to mouse cursor
+  2. "to zeleny je glitchnuty a jezdi par radku nad tim kde to doopravdy pise" — green typing caret floats a few lines ABOVE where text is actually being typed (position bug)
+  3. "nvidia logo je necitelny, protoze ten nvidia napis je cerna na tmave zelenej. nemame bili nvidia logo?" — NVIDIA wordmark is black on dark green background, unreadable; user asked for a white NVIDIA logo
+
+- Diagnosed root causes:
+  - Caret position bug: in tick(), caret Y was computed as `line * LINE_H` (line * 22px from column top). But new fragments are APPENDED below existing content (separator + previous fragments). So line 0 of the current fragment is visually positioned at y = existing_content_height, not y = 0. The caret's calculated position (y=0 for line 0) was therefore ABOVE the actual typing position. Drift grew as more fragments stacked.
+  - No mouse reactivity: only CSS `.code-line:hover` existed. No parallax, no cursor-following effect.
+  - NVIDIA logo: original SVG has `.cls-1{fill:#76b900}` (green eye mark) and wordmark path with NO fill attribute (defaults to black). On dark landing background, the wordmark was invisible.
+
+- Fix 1: Created `/public/nvidia-logo-white.svg` — same SVG but with `.cls-1{fill:#ffffff}` (white eye mark) AND `fill="#ffffff"` added to the wordmark path. Also applied CSS `brightness-0 invert` Tailwind classes on the `<img>` as a bulletproof fallback (guarantees the entire logo renders white regardless of SVG rendering quirks).
+- Fix 2: In code-background.tsx, added `lineDivs: HTMLDivElement[]` to State — tracks the actual line divs of the current fragment. In tick(), replaced `line * LINE_H` with `lineDiv.offsetTop` (actual DOM y position) and `ch * s.charW` with `charSpan.offsetLeft` (actual DOM x position). Caret now lines up exactly with the typing, no matter where the fragment is positioned in the column.
+- Fix 3: Added mouse reactivity (3 layers):
+  - Window-level `mousemove` listener (passive) tracks normalized mouse position (0..1) into `mouse.tx`/`mouse.ty` (target).
+  - In rAF tick, lerps `mouse.x`/`mouse.y` toward target (8% per frame ≈ 200ms response).
+  - Applies parallax transform to `.code-cols` container: `translate((mx-0.5)*36, (my-0.5)*20)` — max 18px x / 10px y shift. Subtle but noticeable.
+  - Added a 700x700px cursor-following green glow div (radial gradient, 0.16 alpha at center) that tracks the interpolated mouse position. Fades in on first mousemove, fades out on mouseleave.
+- Verified via `agent-browser` + `z-ai vision` VLM + JS `eval`:
+  - NVIDIA logo: VLM confirms "NVIDIA" text is white and clearly legible, eye mark visible.
+  - Caret alignment: VLM confirms caret "aligned with the line of code currently being typed, not floating above".
+  - Mouse reactivity: JS eval confirms glow opacity=1, glow transform tracks mouse (mouse at 900,200 → glow center at 898,201), cols transform shows parallax (7.26px, -3.05px). VLM confirms "soft green glow visible on the right side" and "columns slightly shifted to the right".
+- `bun run lint` passes with 0 errors. Dev server runs clean (no errors in dev.log).
+
+Stage Summary:
+- All 3 user-reported issues fixed and visually verified:
+  1. NVIDIA logo now white and readable on dark landing background (white SVG + CSS brightness-0 invert fallback).
+  2. CodeBackground caret now lines up with the typing line (uses actual DOM offsetTop/offsetLeft instead of guessed line*22).
+  3. CodeBackground now reacts to mouse: columns parallax-shift (max 18x10px) + 700px green cursor-following glow (0.16 alpha). Subtle but visible — VLM detects both effects.
+- Files changed: `public/nvidia-logo-white.svg` (new), `src/components/hazsight/landing-view.tsx` (img src + className), `src/components/hazsight/code-background.tsx` (rewritten: lineDivs tracking, mouse parallax, cursor glow).
+- GitHub clone at /home/z/hazsight-clone/ was cleaned up — user will need to re-clone or sync manually to push these changes.
+
+Next priorities (unchanged from prior worklog):
+- Re-clone GitHub repo and push these 3 file changes (white logo + code-background fixes).
+- Real Nebius API key test (user setting up Nebius Builder Program account).
+- Deploy to Vercel for public URL.
+- Add 4 missing GitHub collaborators (Adam, Nikol, Matej, Frantisek) via web UI.
+- Nikol redesign upload/processing/results views to match NVIDIA-green + background-code aesthetic.
+- Fill in NEBIUS_FEEDBACK.md after real API testing.

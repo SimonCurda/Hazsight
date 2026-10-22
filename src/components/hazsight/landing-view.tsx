@@ -167,7 +167,7 @@ export function LandingView({ onUploadClick }: LandingViewProps) {
           {/* NVIDIA + Nebius badges */}
           <div className="mt-8 flex items-center justify-center gap-4">
             <div className="flex items-center gap-2 rounded-lg border border-lime-500/30 bg-lime-500/5 px-3 py-1.5">
-              <img src="/nvidia-logo.svg" alt="NVIDIA" className="h-6" />
+              <img src="/nvidia-logo-white.svg" alt="NVIDIA" className="h-6 brightness-0 invert" />
               <span className="hazsight-readout text-[10px] text-muted-foreground border-l border-lime-500/20 pl-2">
                 Nemotron · Llama 3.2 Vision
               </span>
