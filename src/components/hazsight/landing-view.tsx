@@ -167,15 +167,15 @@ export function LandingView({ onUploadClick }: LandingViewProps) {
           {/* NVIDIA + Nebius badges */}
           <div className="mt-8 flex items-center justify-center gap-4">
             <div className="flex items-center gap-2 rounded-lg border border-lime-500/30 bg-lime-500/5 px-3 py-1.5">
-              <img src="/nvidia-logo.svg" alt="NVIDIA" className="h-5" />
-              <span className="hazsight-readout text-[10px] text-muted-foreground">
+              <img src="/nvidia-logo.svg" alt="NVIDIA" className="h-6" />
+              <span className="hazsight-readout text-[10px] text-muted-foreground border-l border-lime-500/20 pl-2">
                 Nemotron · Llama 3.2 Vision
               </span>
             </div>
             <span className="text-muted-foreground/40 text-xs">+</span>
             <div className="flex items-center gap-2 rounded-lg border border-lime-500/30 bg-lime-500/5 px-3 py-1.5">
-              <span className="hazsight-readout text-xs font-bold text-lime-400">Nebius</span>
-              <span className="hazsight-readout text-[10px] text-muted-foreground">
+              <img src="/nebius-logo.svg" alt="Nebius" className="h-5" />
+              <span className="hazsight-readout text-[10px] text-muted-foreground border-l border-lime-500/20 pl-2">
                 Token Factory
               </span>
             </div>
