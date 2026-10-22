@@ -8,10 +8,13 @@ import {
   ExternalLink,
   ArrowLeft,
   Sparkles,
+  Loader2,
+  RotateCcw,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ModeToggle } from '@/components/mode-toggle'
 import AboutTeamCard from '@/components/hazsight/about-team-card'
 import { LandingView } from '@/components/hazsight/landing-view'
@@ -26,7 +29,7 @@ import {
   type JobResult,
 } from '@/lib/mock-data'
 
-type View = 'landing' | 'uploading' | 'processing' | 'results'
+type View = 'landing' | 'uploading' | 'processing' | 'results' | 'error'
 
 export default function Home() {
   const [view, setView] = React.useState<View>('landing')
@@ -36,6 +39,8 @@ export default function Home() {
   const [jobId, setJobId] = React.useState<string | null>(null)
   const [uploadedFile, setUploadedFile] = React.useState<File | null>(null)
   const [isLive, setIsLive] = React.useState(false)
+  const [isPosting, setIsPosting] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
 
   // Poll for trace events + job status while processing.
   React.useEffect(() => {
@@ -71,8 +76,8 @@ export default function Home() {
             setView('results')
           } else if (jobData.status === 'failed') {
             setIsLive(false)
-            setView('landing')
-            alert(`Analysis failed: ${jobData.error || 'Unknown error'}`)
+            setError(jobData.error || 'Analysis failed')
+            setView('error')
           }
         }
       } catch (err) {
@@ -100,20 +105,19 @@ export default function Home() {
     setPreviewUrl(null)
   }
 
-  const handleAnalyze = async () => {
+  // Shared analysis starter — modular, both handleAnalyze + handleTryDemo call this.
+  const startAnalysis = async (body: BodyInit, imgUrl: string) => {
+    setPreviewUrl(imgUrl)
     setEvents([])
     setResult(null)
+    setJobId(null)
+    setUploadedFile(null)
+    setError(null)
+    setIsPosting(true)
     setView('processing')
 
     try {
-      const formData = new FormData()
-      if (uploadedFile) {
-        formData.append('image', uploadedFile)
-      }
-      const res = await fetch('/api/analyze', {
-        method: 'POST',
-        body: uploadedFile ? formData : undefined,
-      })
+      const res = await fetch('/api/analyze', { method: 'POST', body })
       const data = await res.json()
       if (data.job_id) {
         setJobId(data.job_id)
@@ -121,34 +125,24 @@ export default function Home() {
         throw new Error(data.error || 'Failed to create job')
       }
     } catch (err) {
-      alert(`Failed to start analysis: ${err instanceof Error ? err.message : String(err)}`)
-      setView('uploading')
+      setError(err instanceof Error ? err.message : String(err))
+      setView('error')
+    } finally {
+      setIsPosting(false)
     }
   }
 
-  const handleTryDemo = async () => {
-    setPreviewUrl(MOCK_IMAGE_URL)
-    setEvents([])
-    setResult(null)
-    setUploadedFile(null)
-    setView('processing')
+  const handleAnalyze = () => {
+    const formData = new FormData()
+    if (uploadedFile) formData.append('image', uploadedFile)
+    void startAnalysis(formData, previewUrl || '')
+  }
 
-    try {
-      const res = await fetch('/api/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image_url: MOCK_IMAGE_URL }),
-      })
-      const data = await res.json()
-      if (data.job_id) {
-        setJobId(data.job_id)
-      } else {
-        throw new Error(data.error || 'Failed to create job')
-      }
-    } catch (err) {
-      alert(`Failed to start analysis: ${err instanceof Error ? err.message : String(err)}`)
-      setView('uploading')
-    }
+  const handleTryDemo = () => {
+    void startAnalysis(
+      JSON.stringify({ image_url: MOCK_IMAGE_URL }),
+      MOCK_IMAGE_URL,
+    )
   }
 
   const handleReset = () => {
@@ -158,6 +152,8 @@ export default function Home() {
     setResult(null)
     setJobId(null)
     setUploadedFile(null)
+    setError(null)
+    setIsPosting(false)
   }
 
   const handleBackToHome = () => {
@@ -263,18 +259,55 @@ export default function Home() {
           <section className="container mx-auto max-w-6xl px-4 py-12">
             <div className="mb-8">
               <h1 className="font-mono text-3xl font-bold tracking-tight">
-                Analyzing your photo
+                {isPosting ? 'Connecting to Nebius...' : 'Analyzing your photo'}
               </h1>
               <p className="mt-2 text-sm text-muted-foreground">
-                Watch Nemotron 3 Ultra plan, the VLM detect hazards, and the
-                report synthesize in real time.
+                {isPosting
+                  ? 'Sending image to Nebius Token Factory for VLM analysis via Nemotron...'
+                  : 'Watch Nemotron 3 Ultra plan, the VLM detect hazards, and the report synthesize in real time.'}
               </p>
             </div>
-            <ProcessingView
-              previewUrl={previewUrl}
-              events={events}
-              isLive={isLive}
-            />
+            {isPosting ? (
+              <div className="flex flex-col items-center justify-center gap-4 py-20">
+                <Loader2 className="h-10 w-10 animate-spin text-lime-500" />
+                <span className="hazsight-readout text-sm text-muted-foreground">
+                  {'// awaiting response from api.tokenfactory.nebius.com'}
+                </span>
+              </div>
+            ) : (
+              <ProcessingView
+                previewUrl={previewUrl}
+                events={events}
+                isLive={isLive}
+              />
+            )}
+          </section>
+        )}
+
+        {view === 'error' && (
+          <section className="container mx-auto max-w-3xl px-4 py-12">
+            <Card className="border-red-500/30">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-red-500">
+                  <AlertTriangle className="h-5 w-5" />
+                  Analysis Failed
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  {error || 'An unknown error occurred during analysis.'}
+                </p>
+                <div className="flex gap-3">
+                  <Button onClick={handleReset} className="gap-2">
+                    <RotateCcw className="h-4 w-4" />
+                    Try again
+                  </Button>
+                  <Button variant="outline" onClick={handleBackToHome}>
+                    Back to home
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </section>
         )}
 
