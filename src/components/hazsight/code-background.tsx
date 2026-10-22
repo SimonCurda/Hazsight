@@ -7,24 +7,18 @@ import { useEffect, useRef } from "react";
 /*  Like a terminal: code keeps flowing downward.                     */
 /* ------------------------------------------------------------------ */
 
-const FRAGMENTS: string[][] = [
+// Hardcoded fallback fragments (used if API fails or during SSR)
+const FALLBACK_FRAGMENTS: string[][] = [
   ["// nebius.ts", 'const client = new OpenAI({', '  baseURL: "https://api.tokenfactory.nebius.com/v1/",', '  apiKey: process.env.NEBIUS_API_KEY,', "});"],
-  ["// model config", 'const VLM = "meta/llama-3.2-11b-vision-instruct";', 'const ULTRA = "nvidia/nemotron-3-ultra";'],
-  ["// VLM call", "const res = await client.chat.completions.create({", "  model: VLM,", "  messages: [{ role: 'user', content: [", "    { type: 'image_url', image_url: { url: dataUrl } },", "  ]}],", "});"],
   ["// tavily.ts", "export async function searchAllRegulations(hazards) {", "  for (const h of uniqueCategories) {", "    const results = await searchRegulations(h.category);", "    citations.push({ hazard_category, results });", "  }", "}"],
-  ["// mock regulations", "const MOCK = {", "  FIRE_SMOKE: [{ title: 'vyhl. 246/2001 Sb. § 12' }],", "  UNAUTHORIZED_ZONE: [{ title: 'vyhl. 246/2001 Sb. § 18' }],", "};"],
-  ["// job-store.ts", "export function createJob(url, base64) {", "  const id = `job-${Date.now()}-${random}`;", "  jobs.set(id, { status: 'queued', traceEvents: [] });", "  return id;", "}"],
-  ["// trace events", "appendTraceEvent(jobId, {", "  type: 'vlm_detect',", "  model: 'Llama 3.2 Vision',", "  content: 'Hazard detected: blocked exit',", "});"],
   ["// /api/analyze", "const jobId = createJob(imageUrl, imageBase64);", "await runAnalysis(jobId, imageBase64);", "return NextResponse.json({ job_id: jobId });"],
-  ["// /api/reports", "const pdfBuffer = await renderToBuffer(", "  React.createElement(PdfReport, {", "    score, hazards, imageData,", "  })", ");"],
-  ["// pdf-report.tsx", "<Document>", "  <Page size='A4'>", "    <Text style={styles.title}>Safety Audit</Text>", "    <Text style={styles.score}>{score}/100</Text>", "  </Page>", "</Document>"],
-  ["# schemas.py", "class BoundingBox(BaseModel):", "    x: float = Field(ge=0, le=100)", "    y: float = Field(ge=0, le=100)", "    width: float = Field(ge=0, le=100)"],
-  ["# DetectedHazard", "class DetectedHazard(BaseModel):", "    category: HazardCategory", "    severity: RiskSeverity", "    bounding_box: Optional[BoundingBox]"],
-  ["# severity enum", "class RiskSeverity(str, Enum):", "    LOW = 'LOW'", "    MEDIUM = 'MEDIUM'", "    HIGH = 'HIGH'", "    CRITICAL = 'CRITICAL'"],
-  ["# config.py", "nebius_api_key = Field(default='')", "nebius_base_url = 'https://api.tokenfactory.nebius.com/v1/'", "nebius_vlm_model = 'meta/llama-3.2-11b-vision-instruct'"],
-  ["// mock-data.ts", "export const MOCK_HAZARDS = [", "  { category: 'UNAUTHORIZED_ZONE',", "    severity: 'CRITICAL',", "    confidence: 0.94 },", "];"],
-  ["// landing-view.tsx", "<Button onClick={onUploadClick}>", "  <Camera /> [ Initiate scan ]", "</Button>"],
-];
+  ["// pdf-report.tsx", "<Document>", "  <Page size='A4'>", "    <Text style={styles.title}>Safety Audit</Text>", "  </Page>", "</Document>"],
+  ["# schemas.py", "class BoundingBox(BaseModel):", "    x: float = Field(ge=0, le=100)", "    y: float = Field(ge=0, le=100)"],
+  ["// job-store.ts", "export function createJob(url, base64) {", "  const id = `job-${Date.now()}-${random}`;", "  jobs.set(id, { status: 'queued', traceEvents: [] });", "  return id;", "}"],
+]
+
+// Will be populated from API on mount, falls back to FALLBACK_FRAGMENTS
+let FRAGMENTS: string[][] = FALLBACK_FRAGMENTS;
 
 /* ---- syntax highlighter ---- */
 
@@ -84,6 +78,18 @@ export default function CodeBackground() {
   const rightRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Fetch real code snippets from the API (reads actual source files)
+    fetch('/api/code-snippets')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.snippets && data.snippets.length >= 2) {
+          FRAGMENTS = data.snippets
+        }
+      })
+      .catch(() => {
+        // Keep FALLBACK_FRAGMENTS
+      })
+
     const cols = [leftRef.current, rightRef.current].filter(Boolean) as HTMLDivElement[];
     if (cols.length === 0) return;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;

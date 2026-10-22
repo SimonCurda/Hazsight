@@ -117,7 +117,10 @@ export default function Home() {
     setView('processing')
 
     try {
-      const res = await fetch('/api/analyze', { method: 'POST', body })
+      const headers = typeof body === 'string'
+        ? { 'Content-Type': 'application/json' }
+        : undefined
+      const res = await fetch('/api/analyze', { method: 'POST', body, headers })
       const data = await res.json()
       if (data.job_id) {
         setJobId(data.job_id)
