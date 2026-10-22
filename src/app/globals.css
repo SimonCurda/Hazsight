@@ -418,6 +418,8 @@ body {
 }
 
 .code-col {
+  display: block !important;
+  pointer-events: auto !important;
   display: none;
   position: relative;
   flex: 1 1 0;
@@ -440,6 +442,8 @@ body {
 }
 @media (min-width: 1280px) {
   .code-col {
+  display: block !important;
+  pointer-events: auto !important;
     display: block;
   }
 }
@@ -735,6 +739,8 @@ body {
     pointer-events: none;
   }
   .code-col {
+  display: block !important;
+  pointer-events: auto !important;
     animation: code-pulse 4.8s ease-in-out infinite;
   }
   .code-col:nth-child(2) {
@@ -759,6 +765,8 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .code-col {
+  display: block !important;
+  pointer-events: auto !important;
     animation: none !important;
   }
   .code-caret {

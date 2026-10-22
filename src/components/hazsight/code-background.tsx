@@ -222,9 +222,9 @@ export default function CodeBackground() {
 
   return (
     <div className="code-layer" aria-hidden="true">
-      <div className="code-cols" style={{ display: "flex", gap: "2rem", justifyContent: "center" }}>
-        <div className="code-col" ref={leftRef} style={{ flex: "1 1 0", minWidth: 0, maxWidth: "400px" }} />
-        <div className="code-col" ref={rightRef} style={{ flex: "1 1 0", minWidth: 0, maxWidth: "400px", transform: "translateY(-36px)" }} />
+      <div className="code-cols" style={{ display: "flex", gap: "2rem", justifyContent: "center", pointerEvents: "auto" }}>
+        <div className="code-col" ref={leftRef} style={{ flex: "1 1 0", minWidth: 0, maxWidth: "400px", display: "block", pointerEvents: "auto" }} />
+        <div className="code-col" ref={rightRef} style={{ flex: "1 1 0", minWidth: 0, maxWidth: "400px", transform: "translateY(-36px)", display: "block", pointerEvents: "auto" }} />
       </div>
     </div>
   );
