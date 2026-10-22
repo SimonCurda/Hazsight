@@ -44,7 +44,7 @@
 }
 
 :root {
-  --radius: 0.625rem;
+  --radius: 0.375rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -67,7 +67,7 @@
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
+  --chart-5: oklch(0.78 0.17 125);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -79,37 +79,37 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: oklch(0.04 0 0);
+  --foreground: oklch(0.97 0 0);
+  --card: oklch(0.08 0 0);
+  --card-foreground: oklch(0.97 0 0);
+  --popover: oklch(0.08 0 0);
+  --popover-foreground: oklch(0.97 0 0);
+  --primary: oklch(0.78 0.17 125);
+  --primary-foreground: oklch(0.04 0 0);
+  --secondary: oklch(0.13 0 0);
+  --secondary-foreground: oklch(0.97 0 0);
+  --muted: oklch(0.13 0 0);
+  --muted-foreground: oklch(0.55 0 0);
+  --accent: oklch(0.78 0.17 125);
+  --accent-foreground: oklch(0.04 0 0);
+  --destructive: oklch(0.62 0.22 25);
+  --border: oklch(1 0 0 / 8%);
+  --input: oklch(1 0 0 / 10%);
+  --ring: oklch(0.78 0.17 125);
+  --chart-1: oklch(0.62 0.22 25);
+  --chart-2: oklch(0.7 0.18 55);
+  --chart-3: oklch(0.8 0.15 85);
+  --chart-4: oklch(0.7 0.16 155);
+  --chart-5: oklch(0.78 0.17 125);
+  --sidebar: oklch(0.08 0 0);
+  --sidebar-foreground: oklch(0.97 0 0);
+  --sidebar-primary: oklch(0.78 0.17 125);
+  --sidebar-primary-foreground: oklch(0.04 0 0);
+  --sidebar-accent: oklch(0.13 0 0);
+  --sidebar-accent-foreground: oklch(0.97 0 0);
+  --sidebar-border: oklch(1 0 0 / 8%);
+  --sidebar-ring: oklch(0.78 0.17 125);
 }
 
 @layer base {
@@ -118,5 +118,682 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "ss01", "ss02", "cv01", "cv02";
   }
+}
+
+/* ============================================
+   HAZSIGHT — Futuristic / Industrial HUD theme
+   ============================================ */
+
+/* Grid background pattern — checkerboard (vertical + horizontal lines) */
+.hazsight-grid-bg {
+  background-image:
+    linear-gradient(to right, oklch(0.78 0.17 125 / 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, oklch(0.78 0.17 125 / 0.08) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* Dot matrix background — denser, more "scanned" feel */
+.hazsight-dot-bg {
+  background-image: radial-gradient(oklch(0.96 0.005 60 / 0.08) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+/* HUD corner brackets — applied to cards via ::before / ::after */
+.hazsight-hud {
+  position: relative;
+}
+.hazsight-hud::before,
+.hazsight-hud::after {
+  content: "";
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: var(--primary);
+  border-style: solid;
+  pointer-events: none;
+  opacity: 0.6;
+}
+.hazsight-hud::before {
+  top: -1px;
+  left: -1px;
+  border-width: 1px 0 0 1px;
+}
+.hazsight-hud::after {
+  bottom: -1px;
+  right: -1px;
+  border-width: 0 1px 1px 0;
+}
+
+/* Scan line animation — for hero + processing view */
+@keyframes hazsight-scan {
+  0% { transform: translateY(-100%); opacity: 0; }
+  10% { opacity: 0.4; }
+  90% { opacity: 0.4; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+.hazsight-scanline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, oklch(0.78 0.17 125 / 0.2), oklch(0.78 0.17 125 / 0.5), oklch(0.78 0.17 125 / 0.2), transparent);
+  box-shadow: 0 0 6px oklch(0.78 0.17 125 / 0.15);
+  animation: hazsight-scan 10s linear infinite;
+  pointer-events: none;
+}
+
+/* Vertical scan line — for image analysis overlay */
+@keyframes hazsight-vscan {
+  0% { left: 0; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { left: 100%; opacity: 0; }
+}
+.hazsight-vscanline {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, transparent, oklch(0.65 0.25 25 / 0.5), oklch(0.65 0.25 25), oklch(0.65 0.25 25 / 0.5), transparent);
+  box-shadow: 0 0 16px oklch(0.65 0.25 25 / 0.8);
+  animation: hazsight-vscan 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Glow effects for critical hazards */
+.hazsight-glow-lime {
+  box-shadow: 0 0 16px oklch(0.78 0.17 125 / 0.3), 0 0 32px oklch(0.78 0.17 125 / 0.15);
+}
+.hazsight-glow-red {
+  box-shadow: 0 0 16px oklch(0.65 0.25 25 / 0.4), 0 0 32px oklch(0.65 0.25 25 / 0.2);
+}
+
+/* Monospace tech readout style */
+.hazsight-readout {
+  font-family: var(--font-geist-mono), monospace;
+  font-feature-settings: "tnum", "zero", "ss01";
+  letter-spacing: -0.01em;
+}
+
+/* Terminal-style prefix */
+.hazsight-terminal-prompt::before {
+  content: "> ";
+  color: oklch(0.78 0.17 125);
+  font-weight: bold;
+}
+
+/* Blinking cursor for live indicators */
+@keyframes hazsight-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+.hazsight-blink {
+  animation: hazsight-blink 1s steps(2) infinite;
+}
+
+/* Subtle pulse for live status indicators */
+@keyframes hazsight-pulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+.hazsight-pulse {
+  animation: hazsight-pulse 2s ease-in-out infinite;
+}
+
+/* Ambient gradient shift — slow, breathing background */
+@keyframes hazsight-ambient {
+  0%, 100% {
+    background-position: 0% 50%;
+    opacity: 0.4;
+  }
+  50% {
+    background-position: 100% 50%;
+    opacity: 0.6;
+  }
+}
+.hazsight-ambient {
+  background: radial-gradient(ellipse at 20% 0%, oklch(0.78 0.17 125 / 0.12) 0%, transparent 50%),
+              radial-gradient(ellipse at 80% 100%, oklch(0.62 0.22 25 / 0.08) 0%, transparent 50%);
+  background-size: 200% 200%;
+  animation: hazsight-ambient 12s ease-in-out infinite;
+}
+
+/* Subtle hover lift for cards */
+.hazsight-hover-lift {
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 0.3s ease,
+              box-shadow 0.3s ease;
+}
+.hazsight-hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px oklch(0 0 0 / 0.3), 0 0 0 1px oklch(0.78 0.17 125 / 0.2);
+}
+
+/* Subtle glow on hover for buttons */
+.hazsight-glow-hover {
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.hazsight-glow-hover:hover {
+  box-shadow: 0 0 24px oklch(0.78 0.17 125 / 0.25), 0 0 48px oklch(0.78 0.17 125 / 0.1);
+}
+
+/* Custom scrollbar — tech feel */
+.hazsight-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.hazsight-scroll::-webkit-scrollbar-track {
+  background: oklch(0.08 0 0);
+}
+.hazsight-scroll::-webkit-scrollbar-thumb {
+  background: oklch(0.3 0 0);
+  border-radius: 3px;
+}
+.hazsight-scroll::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.78 0.17 125);
+}
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ============================================
+   BACKGROUND CODE — animated, hover-reactive
+   ============================================ */
+
+/* Per-character span in background code */
+.bg-code-char {
+  display: inline-block;
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+              color 0.25s ease,
+              text-shadow 0.25s ease,
+              opacity 0.25s ease;
+  will-change: transform;
+}
+
+/* Hover state — character lifts + scales up + glows green */
+@media (hover: hover) {
+  .bg-code-char:hover {
+    transform: translateY(-3px) scale(1.2);
+    color: oklch(0.85 0.19 125);
+    text-shadow: 0 0 8px oklch(0.78 0.17 125 / 0.6),
+                0 0 16px oklch(0.78 0.17 125 / 0.3);
+    opacity: 1 !important;
+  }
+}
+
+/* Container pulse — subtle, only when not hovered (desktop) */
+@keyframes bg-code-pulse-desktop {
+  0%, 100% { opacity: 0.18; }
+  50% { opacity: 0.28; }
+}
+@keyframes bg-code-pulse-mobile {
+  0%, 100% { opacity: 0.22; }
+  50% { opacity: 0.38; }
+}
+
+/* Desktop: subtle pulse (since hover is the main interaction) */
+@media (hover: hover) {
+  .bg-code-snippet {
+    animation: bg-code-pulse-desktop 8s ease-in-out infinite;
+  }
+  .bg-code-snippet:nth-child(2n) { animation-delay: -2s; }
+  .bg-code-snippet:nth-child(3n) { animation-delay: -4s; }
+  .bg-code-snippet:nth-child(5n) { animation-delay: -6s; }
+}
+
+/* Mobile (no hover available): slightly more visible pulse */
+@media (hover: none) {
+  .bg-code-snippet {
+    animation: bg-code-pulse-mobile 6s ease-in-out infinite;
+  }
+  .bg-code-snippet:nth-child(2n) { animation-delay: -1.5s; }
+  .bg-code-snippet:nth-child(3n) { animation-delay: -3s; }
+  .bg-code-snippet:nth-child(5n) { animation-delay: -4.5s; }
+}
+
+/* Slow drift — barely-perceptible horizontal movement */
+@keyframes bg-code-drift {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(4px); }
+}
+.bg-code-snippet {
+  animation: bg-code-pulse-desktop 8s ease-in-out infinite,
+             bg-code-drift 20s ease-in-out infinite;
+}
+
+/* Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .bg-code-snippet,
+  .bg-code-char,
+  .hazsight-scanline,
+  .hazsight-ambient {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+
+/* ============================================
+   NIKOL COMPONENTS — CSS for CodeBackground, HazsightLogo, AboutTeamCard
+   ============================================ */
+
+
+/* ================================================================== */
+/*  Code-canvas dark design                                           */
+/* ================================================================== */
+
+html,
+body {
+  background-color: #050507;
+  color-scheme: dark;
+}
+
+.dark-page ::selection {
+  background: rgba(52, 211, 153, 0.3);
+  color: #ecfdf5;
+}
+
+/* ---------- backdrop layer ---------- */
+
+.code-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: pan-y;
+}
+
+.code-cols {
+  display: flex;
+  gap: clamp(2rem, 4vw, 4rem);
+  height: 100%;
+  padding: 1.5rem 2rem 1.5rem 2.5rem;
+  box-sizing: border-box;
+}
+
+.code-col {
+  display: none;
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  font-family: var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo,
+    Consolas, monospace;
+  font-size: 13px;
+  line-height: 22px;
+  color: #aab2c0;
+  transition: opacity 0.8s ease;
+}
+
+.code-col:first-child {
+  display: block;
+}
+@media (min-width: 768px) {
+  .code-col:nth-child(-n + 2) {
+    display: block;
+  }
+}
+@media (min-width: 1280px) {
+  .code-col {
+    display: block;
+  }
+}
+
+.code-lines {
+  position: relative;
+}
+
+/* one line of code — hover makes it grow + light up */
+.code-line {
+  opacity: 0.25 !important;
+  position: relative;
+  height: 22px;
+  white-space: pre;
+  opacity: 0.3;
+  transform-origin: 0 50%;
+  transition: opacity 0.25s ease, transform 0.25s ease, filter 0.25s ease,
+    background 0.25s ease;
+  will-change: transform, opacity;
+}
+
+.code-line:hover {
+  opacity: 1;
+  transform: scale(1.05) translateX(8px);
+  filter: brightness(1.6) drop-shadow(0 0 14px rgba(52, 211, 153, 0.3));
+  background: linear-gradient(
+    90deg,
+    rgba(52, 211, 153, 0.1),
+    rgba(52, 211, 153, 0) 70%
+  );
+  z-index: 6;
+}
+
+/* blinking caret of the typewriter */
+.code-caret {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 8px;
+  height: 15px;
+  margin-top: 3px;
+  background: #34d399;
+  border-radius: 1px;
+  box-shadow: 0 0 10px rgba(52, 211, 153, 0.9);
+  animation: caret-blink 1.1s steps(2, start) infinite;
+  pointer-events: none;
+}
+
+@keyframes caret-blink {
+  0%,
+  45% {
+    opacity: 1;
+  }
+  50%,
+  95% {
+    opacity: 0;
+  }
+}
+
+/* reusable blinking cursor accent (header underscore) */
+.blink-cursor {
+  animation: caret-blink 1.1s steps(2, start) infinite;
+}
+
+/* ---------- interactive Hazsight logo (detector eye) ---------- */
+
+.logo-badge {
+  display: grid;
+  place-items: center;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(52, 211, 153, 0.3);
+  background: rgba(52, 211, 153, 0.1);
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.logo-badge:hover {
+  border-color: rgba(52, 211, 153, 0.65);
+  box-shadow: 0 0 20px rgba(52, 211, 153, 0.35);
+}
+
+/* periodic blink of the whole eye */
+.logo-eye {
+  transform-origin: 20px 20px;
+  animation: eye-blink 5.4s infinite;
+}
+
+@keyframes eye-blink {
+  0%,
+  91%,
+  97%,
+  100% {
+    transform: scaleY(1);
+  }
+  94% {
+    transform: scaleY(0.08);
+  }
+}
+
+/* slow sonar ring — always on */
+.logo-scan {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: logo-sonar 3.2s ease-out infinite;
+}
+
+/* fast sonar ring — hidden until hover, then pulses fast */
+.logo-scan-fast {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+@keyframes logo-sonar {
+  0% {
+    transform: scale(0.55);
+    opacity: 0.8;
+  }
+  70%,
+  100% {
+    transform: scale(1.12);
+    opacity: 0;
+  }
+}
+
+/* dashed radar focus-lock ring — spins in on hover */
+.logo-focus {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  animation: logo-spin 6s linear infinite;
+}
+
+.logo-badge:hover .logo-focus {
+  opacity: 0.95;
+}
+
+.logo-badge:hover .logo-scan-fast {
+  opacity: 1;
+  animation: logo-sonar 1.1s ease-out infinite;
+}
+
+@keyframes logo-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------- "Meet the team" popover (logo hover) ---------- */
+
+.about-card {
+  position: absolute;
+  top: calc(100% + 14px);
+  left: 0;
+  z-index: 50;
+  width: min(360px, calc(100vw - 40px));
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(165deg, rgba(17, 21, 19, 0.985), rgba(10, 12, 11, 0.975));
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+  box-shadow: 0 24px 70px -24px rgba(0, 0, 0, 0.9),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  padding: 1rem 1.1rem 1.1rem;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px) scale(0.97);
+  transform-origin: top left;
+  pointer-events: none;
+  transition: opacity 0.22s ease, transform 0.22s ease, visibility 0s 0.22s;
+}
+
+.about-card[data-open="true"] {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  pointer-events: auto;
+  transition: opacity 0.22s ease, transform 0.22s ease, visibility 0s 0s;
+}
+
+/* small arrow pointing at the logo */
+.about-card::before {
+  content: "";
+  position: absolute;
+  top: -6.5px;
+  left: 24px;
+  width: 12px;
+  height: 12px;
+  transform: rotate(45deg);
+  background: rgba(13, 16, 14, 0.99);
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  border-top-left-radius: 3px;
+}
+
+.about-close {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 0;
+  background: transparent;
+  color: #71717a;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.about-close:hover {
+  color: #e4e4e7;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ---------- syntax colors (no blue/indigo) ---------- */
+
+.tk-com {
+  color: #5d6673;
+  font-style: italic;
+}
+.tk-str {
+  color: #fcd34d;
+}
+.tk-key {
+  color: #34d399;
+}
+.tk-num {
+  color: #fb7185;
+}
+.tk-tag {
+  color: #5eead4;
+}
+.tk-fn {
+  color: #f0abfc;
+}
+.tk-pun {
+  color: #7d8797;
+}
+.tk-txt {
+  color: #c3cad6;
+}
+
+/* ---------- ambient layers ---------- */
+
+.code-grid {
+  background-image: linear-gradient(rgba(255, 255, 255, 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(
+    ellipse 90% 80% at 50% 45%,
+    black 30%,
+    transparent 78%
+  );
+  -webkit-mask-image: radial-gradient(
+    ellipse 90% 80% at 50% 45%,
+    black 30%,
+    transparent 78%
+  );
+}
+
+.vignette {
+  background: radial-gradient(
+    ellipse 75% 65% at 50% 46%,
+    transparent 40%,
+    rgba(0, 0, 0, 0.55) 100%
+  );
+}
+
+/* ---------- glass main window ---------- */
+
+.glass-card {
+  border-radius: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.07),
+    rgba(255, 255, 255, 0.025) 45%,
+    rgba(255, 255, 255, 0.045)
+  );
+  backdrop-filter: blur(22px) saturate(1.2);
+  -webkit-backdrop-filter: blur(22px) saturate(1.2);
+  box-shadow: 0 30px 90px -30px rgba(0, 0, 0, 0.85),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* ---------- mobile: gentle pulse instead of hover ---------- */
+
+@media (hover: none) {
+  .code-layer {
+    pointer-events: none;
+  }
+  .code-col {
+    animation: code-pulse 4.8s ease-in-out infinite;
+  }
+  .code-col:nth-child(2) {
+    animation-delay: 1.5s;
+  }
+  .code-col:nth-child(3) {
+    animation-delay: 3s;
+  }
+}
+
+@keyframes code-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+
+/* ---------- reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .code-col {
+    animation: none !important;
+  }
+  .code-caret {
+    animation: none !important;
+  }
+  .code-line,
+  .code-line:hover {
+    transition: none;
+    transform: none;
+  }
+  .logo-eye,
+  .logo-scan,
+  .logo-scan-fast,
+  .logo-focus,
+  .blink-cursor {
+    animation: none !important;
+  }
+  .about-card {
+    transition: none;
+  }
+}
+
+/* Code typing caret — blinking _ */
+@keyframes hazsight-caret-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+.code-caret {
+  position: absolute;
+  display: inline-block;
+  color: oklch(0.78 0.17 125);
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 13px;
+  line-height: 22px;
+  animation: hazsight-caret-blink 0.8s steps(2) infinite;
+  pointer-events: none;
+  z-index: 5;
 }
