@@ -3,11 +3,12 @@
 import { useEffect, useRef } from "react";
 
 /* ------------------------------------------------------------------ */
-/*  Static code background — reads actual source files via API.        */
-/*  2 columns of syntax-highlighted code (all visible, no typing).     */
+/*  Typewriter code background — reads actual source files via API.    */
+/*  2 columns, each typing different random snippets.                  */
+/*  NO caret, NO cursor glow (per user request — those were the         */
+/*  "4 things" that cluttered the screen).                              */
 /*  Mouse parallax: cursor subtly shifts the columns.                  */
 /*  Line hover: individual lines enlarge + glow (CSS .code-line:hover).*/
-/*  No cursor glow, no carets, no typing animation (per user request).  */
 /* ------------------------------------------------------------------ */
 
 const FALLBACK: string[][] = [
@@ -44,37 +45,20 @@ function pick(avoid: number[], max: number): number {
   return idx;
 }
 
-/** Render a set of snippets as static, syntax-highlighted code lines into a column. */
-function renderColumn(col: HTMLDivElement, snippets: string[][], startIdx: number) {
-  col.innerHTML = "";
-  // Stack 3 snippets (cycling through the array) to fill the visible column height
-  const count = Math.min(3, snippets.length);
-  let idx = startIdx;
-  for (let i = 0; i < count; i++) {
-    const lines = snippets[idx];
-    for (const line of lines) {
-      const div = document.createElement("div");
-      div.className = "code-line";
-      const chs = tokenize(line);
-      for (const ch of chs) {
-        const sp = document.createElement("span");
-        sp.className = ch.k;
-        sp.textContent = ch.c;
-        div.appendChild(sp);
-      }
-      col.appendChild(div);
-    }
-    // Faint separator between snippets
-    if (i < count - 1) {
-      const sep = document.createElement("div");
-      sep.className = "code-line";
-      sep.style.opacity = "0.2";
-      sep.innerHTML = '<span class="tk-com">// ───</span>';
-      col.appendChild(sep);
-    }
-    idx = (idx + 1) % snippets.length;
-  }
-}
+const CHAR_MS = 16;
+const GAP_MS = 350;
+const MAX_LINES = 14;
+
+type State = {
+  el: HTMLDivElement;
+  frags: string[][];
+  fragIdx: number;
+  chars: HTMLSpanElement[];
+  ptr: number;
+  nextAt: number;
+  phase: "wait" | "type" | "gap";
+  delay: number;
+};
 
 export default function CodeBackground() {
   const leftRef = useRef<HTMLDivElement>(null);
@@ -89,8 +73,8 @@ export default function CodeBackground() {
 
     // Mouse parallax state — only the columns shift, no glow
     const mouse = {
-      x: 0.5, y: 0.5,        // current (smoothly interpolated)
-      tx: 0.5, ty: 0.5,      // target (latest mouse position, normalized 0..1)
+      x: 0.5, y: 0.5,
+      tx: 0.5, ty: 0.5,
     };
 
     const onMouseMove = (e: MouseEvent) => {
@@ -102,29 +86,92 @@ export default function CodeBackground() {
       window.addEventListener("mousemove", onMouseMove, { passive: true });
     }
 
-    // Fetch real snippets and render them statically
+    // Fetch real snippets from codebase, THEN start typing
     fetch("/api/code-snippets")
       .then((r) => r.json())
       .then((data) => {
         if (cancelled) return;
         const snippets: string[][] = data.snippets?.length >= 2 ? data.snippets : FALLBACK;
-        const leftIdx = pick([], snippets.length);
-        const rightIdx = pick([leftIdx], snippets.length);
-        renderColumn(cols[0], snippets, leftIdx);
-        if (cols[1]) renderColumn(cols[1], snippets, rightIdx);
+        start(snippets);
       })
       .catch(() => {
         if (cancelled) return;
-        renderColumn(cols[0], FALLBACK, 0);
-        if (cols[1]) renderColumn(cols[1], FALLBACK, 1);
+        start(FALLBACK);
       });
 
-    // Parallax animation loop — cursor subtly shifts the columns
-    let raf = 0;
-    if (!reduced) {
-      const tick = () => {
+    function start(snippets: string[][]) {
+      // Assign different starting fragments to each column
+      const states: State[] = cols.map((el, i) => {
+        const firstIdx = i === 0 ? pick([], snippets.length) : pick([cols.length > 0 ? 0 : -1], snippets.length);
+        return {
+          el,
+          frags: snippets,
+          fragIdx: firstIdx,
+          chars: [],
+          ptr: 0,
+          nextAt: 0,
+          phase: "wait" as const,
+          delay: i === 0 ? 200 : 1000,
+        };
+      });
+
+      // Fix second column to avoid first column's fragment
+      if (states.length > 1) {
+        states[1].fragIdx = pick([states[0].fragIdx], snippets.length);
+      }
+
+      function build(s: State) {
+        const lines = s.frags[s.fragIdx];
+        // Separator between fragments
+        if (s.chars.length > 0 || s.el.children.length > 0) {
+          const sep = document.createElement("div");
+          sep.className = "code-line";
+          sep.style.opacity = "0.25";
+          sep.innerHTML = '<span class="tk-com" style="visibility:visible">// ───</span>';
+          s.el.appendChild(sep);
+        }
+        s.chars = [];
+        s.ptr = 0;
+        for (let li = 0; li < lines.length; li++) {
+          const div = document.createElement("div");
+          div.className = "code-line";
+          const chs = tokenize(lines[li]);
+          for (const ch of chs) {
+            const sp = document.createElement("span");
+            sp.className = ch.k;
+            sp.textContent = ch.c;
+            sp.style.visibility = "hidden";
+            div.appendChild(sp);
+            s.chars.push(sp);
+          }
+          s.el.appendChild(div);
+        }
+        // Remove old lines if too many
+        while (s.el.querySelectorAll(".code-line").length > MAX_LINES) {
+          const first = s.el.querySelector(".code-line");
+          if (first) first.remove();
+        }
+      }
+
+      // Initialize both columns
+      states.forEach((s) => build(s));
+
+      if (reduced) {
+        for (const s of states) {
+          s.chars.forEach((c) => (c.style.visibility = "visible"));
+        }
+        return;
+      }
+
+      let raf = 0;
+      const t0 = performance.now();
+
+      const tick = (now: number) => {
         if (cancelled) return;
         raf = requestAnimationFrame(tick);
+        const t = now - t0;
+
+        // Smooth mouse interpolation (parallax)
         mouse.x += (mouse.tx - mouse.x) * 0.08;
         mouse.y += (mouse.ty - mouse.y) * 0.08;
         if (colsRef.current) {
@@ -132,14 +179,46 @@ export default function CodeBackground() {
           const dy = (mouse.y - 0.5) * 20;
           colsRef.current.style.transform = `translate(${dx.toFixed(2)}px, ${dy.toFixed(2)}px)`;
         }
+
+        for (const s of states) {
+          if (s.el.offsetParent === null) continue;
+          switch (s.phase) {
+            case "wait":
+              if (t >= s.delay) { s.phase = "type"; s.nextAt = t; }
+              break;
+            case "type":
+              // Reveal characters one by one (typing animation, no caret)
+              let guard = 0;
+              while (t >= s.nextAt && s.ptr < s.chars.length && guard++ < 8) {
+                s.chars[s.ptr].style.visibility = "visible";
+                s.ptr++;
+                s.nextAt += CHAR_MS;
+              }
+              if (s.ptr >= s.chars.length) {
+                // Pick next random fragment (different from current + other columns)
+                const others = states.filter((o) => o !== s).map((o) => o.fragIdx);
+                s.fragIdx = pick([s.fragIdx, ...others], s.frags.length);
+                s.phase = "gap";
+                s.nextAt = t + GAP_MS;
+              }
+              break;
+            case "gap":
+              if (t >= s.nextAt) {
+                build(s);
+                s.phase = "type";
+                s.nextAt = t;
+              }
+              break;
+          }
+        }
       };
+
       raf = requestAnimationFrame(tick);
     }
 
     return () => {
       cancelled = true;
       window.removeEventListener("mousemove", onMouseMove);
-      cancelAnimationFrame(raf);
     };
   }, []);
 

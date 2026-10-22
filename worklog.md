@@ -480,3 +480,67 @@ Next priorities:
 - Real Nebius API key test (user setting up Nebius Builder Program).
 - Add 4 missing GitHub collaborators.
 - Nikol redesign upload/processing/results views.
+
+---
+
+Task ID: hazsight-typing-back-nebius-test
+Agent: Z.ai Code (assisting Simon Curda — direct user requests)
+Task: Re-add typing animation (no carets/glow), verify NVIDIA logo size, prepare Nebius Token Factory test endpoint
+
+Work Log:
+- User feedback (in Czech):
+  1. "kazdopadne vidim proble. ten kod se na pozadi nepise" — the code in the background isn't typing (problem!)
+  2. "jinak je to nvidia logo dobre velky? je to vpohode?" — is the NVIDIA logo a good size?
+  3. "jinak na token factory api uz to je pripraveny nebo?" — is it ready for the Token Factory API?
+
+- Re-interpreted earlier request: when the user said "skryj je zatim ad zbytecne nedelaj bordel" (hide the 4 typing things so they don't clutter), the "4 things" were the CARETS (2 green bars + 2 underscores = 4 visual elements), NOT the typing animation itself. The user wanted the carets gone, but the typing should continue.
+
+**Fix 1: Re-added typing animation (without carets, without glow)**
+- Rewrote `code-background.tsx` (150 → 185 lines):
+  - BROUGHT BACK: `build()` function (creates line divs + char spans with `visibility:hidden`), `tick()` function (reveals chars one by one at CHAR_MS=16ms intervals), snippet rotation (type → gap → new snippet), MAX_LINES=14 cleanup.
+  - REMOVED (still gone): caret creation (`s.caret`, the green bar div + underscore), cursor-following glow div, `lineDivs` tracking (was only needed for caret positioning — no caret = no need).
+  - KEPT: mouse parallax (window mousemove → lerp 0.08 → cols transform), line hover (CSS `.code-line:hover`), snippet fetching from /api/code-snippets.
+  - `State` type simplified: removed `caret`, `lineDivs`, `lineLens`, `charW` — only `chars`, `ptr`, `nextAt`, `phase`, `delay` remain.
+- Verified via JS eval:
+  - Typing active: span count went 500→538 (new fragment added), visible went 500→385 (new fragment typing in progress). Count changes over time = DOM being actively modified = typing works.
+  - Caret count: 0 (confirmed removed).
+  - Glow div: "no glow" (confirmed removed).
+  - Parallax: colsTransform = translate(7.29px, -3.06px) when mouse at (900, 200).
+
+**Fix 2: NVIDIA logo size — no adjustment needed**
+- Verified via VLM screenshot analysis: "The size is 'Just Right'. Well-proportioned relative to the badge container, matches the adjacent text height, doesn't dominate the hero section. No adjustment necessary."
+- Current `className="h-6"` (24px height) with the green-background NVIDIA logo is correct.
+
+**Fix 3: Nebius Token Factory API — ready + new test endpoint**
+- Audited existing integration:
+  - `src/lib/nebius.ts`: full OpenAI-compatible client at `https://api.tokenfactory.nebius.com/v1/`, with `analyzeImageWithVlm()` (Llama 3.2 Vision VLM) + `extractStructuredJson()` (Nemotron 3 Ultra). Model names configurable via env vars. `nebiusAvailable()` checks if key is set.
+  - `/api/analyze` route: calls Nebius VLM + reasoning when key set, falls back to mock when not. Already production-ready.
+- NEW: Created `/api/nebius-test` endpoint (`src/app/api/nebius-test/route.ts`):
+  - Returns `{ available: false, key_set: false, base_url, models, message, hint }` when no key (200 status).
+  - Makes a minimal chat completion test request (Nemotron 3 Super, "Reply with: OK", max_tokens=5) when key IS set, returns `{ available: true, key_set: true, base_url, models, test_model, test_response }` (200 status).
+  - Returns helpful error with hint on failure (401 = invalid key, 404 = wrong model name, etc.).
+  - Verified via curl: returns 200 with `available: false, key_set: false` + model names + helpful message.
+- Enhanced `.env.example`: added Vercel deployment instructions for NEBIUS_API_KEY (same format as TAVILY_API_KEY — local dev, Vercel dashboard/CLI, verify via /api/nebius-test).
+
+**Verification:**
+- `bun run lint` — 0 errors.
+- Full flow: landing → upload → demo → processing → results. POST /api/analyze 200 in 5.5s. Results render with Regulations & Citations showing correct MOCK badge.
+- Dev log: clean, no errors. GET /api/nebius-test 200, GET /api/tavily-test 200, POST /api/analyze 200.
+
+Stage Summary:
+- Code background types again (character-by-character reveal, no caret, no glow — just the typing). Parallax + line hover still work.
+- NVIDIA logo size is good (no change).
+- Nebius Token Factory API integration is fully ready:
+  - `nebius.ts` client + `analyzeImageWithVlm` + `extractStructuredJson` (VLM + reasoning model calls).
+  - `/api/analyze` route wires it into the analysis flow.
+  - NEW: `/api/nebius-test` endpoint to verify the key before deploying.
+  - `.env.example` has Vercel env var instructions for NEBIUS_API_KEY.
+- To enable real VLM analysis: add `NEBIUS_API_KEY=xxx` to `.env.local`, visit `/api/nebius-test` to verify, then deploy to Vercel with the env var.
+- Files changed: `src/components/hazsight/code-background.tsx` (re-added typing, no caret), `src/app/api/nebius-test/route.ts` (new), `.env.example` (NEBIUS Vercel instructions).
+
+Next priorities:
+- User to set NEBIUS_API_KEY + TAVILY_API_KEY in .env.local, verify via /api/nebius-test + /api/tavily-test.
+- Deploy to Vercel with both env vars.
+- Real API testing end-to-end.
+- Add 4 missing GitHub collaborators.
+- Nikol redesign upload/processing/results views.
