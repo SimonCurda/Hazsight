@@ -10,6 +10,7 @@ import {
   Sparkles,
   Loader2,
   RotateCcw,
+  Activity,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -21,6 +22,7 @@ import { LandingView } from '@/components/hazsight/landing-view'
 import { UploadDropzone } from '@/components/hazsight/upload-dropzone'
 import { ProcessingView } from '@/components/hazsight/processing-view'
 import { ResultsView } from '@/components/hazsight/results-view'
+import { MonitoringView } from '@/components/hazsight/monitoring-view'
 import {
   MOCK_TRACE_EVENTS,
   MOCK_JOB_RESULT,
@@ -29,7 +31,7 @@ import {
   type JobResult,
 } from '@/lib/mock-data'
 
-type View = 'landing' | 'uploading' | 'processing' | 'results' | 'error'
+type View = 'landing' | 'uploading' | 'processing' | 'results' | 'monitoring' | 'error'
 
 export default function Home() {
   const [view, setView] = React.useState<View>('landing')
@@ -163,6 +165,16 @@ export default function Home() {
     setView('landing')
   }
 
+  const handleMonitoringClick = () => {
+    setView('monitoring')
+  }
+
+  const handleJobSelectFromMonitoring = (jobResult: JobResult) => {
+    setResult(jobResult)
+    setPreviewUrl(jobResult.image_url)
+    setView('results')
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Sticky header — terminal style */}
@@ -193,6 +205,16 @@ export default function Home() {
                 </Button>
               </>
             )}
+            {/* Monitoring dashboard — available from any view */}
+            <Button
+              variant={view === 'monitoring' ? 'default' : 'ghost'}
+              size="sm"
+              className="gap-1.5 text-xs"
+              onClick={handleMonitoringClick}
+            >
+              <Activity className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Monitoring</span>
+            </Button>
             <Button variant="ghost" size="icon" asChild className="rounded">
               <a
                 href="https://github.com/SimonCurda/Hazsight"
@@ -284,6 +306,15 @@ export default function Home() {
                 isLive={isLive}
               />
             )}
+          </section>
+        )}
+
+        {view === 'monitoring' && (
+          <section className="container mx-auto max-w-6xl px-4 py-12">
+            <MonitoringView
+              onJobSelect={handleJobSelectFromMonitoring}
+              onUploadClick={handleUploadClick}
+            />
           </section>
         )}
 

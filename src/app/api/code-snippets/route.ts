@@ -20,9 +20,10 @@ const SOURCE_DIRS = [
   'src/app/api',
   'src/components/hazsight',
   'src/app',
+  'backend-snippets', // Python backend code (mix of frontend + backend in background)
 ]
 
-const FILE_EXTENSIONS = ['.ts', '.tsx']
+const FILE_EXTENSIONS = ['.ts', '.tsx', '.py']
 
 const FALLBACK_SNIPPETS: string[][] = [
   ["// nebius.ts", "const client = new OpenAI({", '  baseURL: "https://api.tokenfactory.nebius.com/v1/",', "});"],
@@ -55,7 +56,9 @@ function readSourceFiles(basePath: string): string[][] {
         const snippetLen = Math.min(3 + Math.floor(Math.random() * 5), lines.length)
         const startIdx = Math.floor(Math.random() * (lines.length - snippetLen + 1))
         const snippet = lines.slice(startIdx, startIdx + snippetLen)
-        snippet.unshift(`// ${file}`)
+        // Comment prefix matches file extension: // for TS, # for Python
+        const commentPrefix = file.endsWith('.py') ? '#' : '//'
+        snippet.unshift(`${commentPrefix} ${file}`)
         snippets.push(snippet)
       } catch {
         continue

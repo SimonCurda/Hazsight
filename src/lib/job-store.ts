@@ -116,6 +116,16 @@ export function getTraceEventsSince(
   return job.traceEvents.filter((e) => e.timestamp > sinceTimestamp)
 }
 
+/**
+ * List all jobs, newest first. Used by the monitoring dashboard + GET /api/jobs.
+ * Returns a summary (no trace events, no base64 image) to keep the payload small.
+ */
+export function listJobs(limit: number = 50): JobResult[] {
+  const all = Array.from(jobs.values())
+  all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+  return all.slice(0, limit).map(toJobResult)
+}
+
 export function toJobResult(job: Job): JobResult {
   return {
     job_id: job.id,

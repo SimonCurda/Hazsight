@@ -592,3 +592,70 @@ Stage Summary:
 - Applied selectively to: hazard cards, summary/scene-description/regulations/reasoning-trace cards (results view), pipeline/hazard-type/tech-stack cards (landing view).
 - NOT applied to: the hero heading/text (the code typing behind the hero is part of the aesthetic), buttons, badges, or the annotated image.
 - Files changed: `src/app/globals.css` (`.hazsight-glass` utility), `src/components/hazsight/results-view.tsx` (4 cards), `src/components/hazsight/risk-list.tsx` (hazard cards), `src/components/hazsight/landing-view.tsx` (3 cards).
+
+---
+
+Task ID: hazsight-python-snippets-monitoring-api
+Agent: Z.ai Code (assisting Simon Curda — direct user requests)
+Task: Add Python backend snippets to background code, build monitoring API + dashboard, discuss fire detection
+
+Work Log:
+- User requests:
+  1. Add Python backend snippets from GitHub repo to the background code (mix of backend + frontend)
+  2. Implement monitoring API (camera/cron POSTs every 15 min, results in dashboard)
+  3. Fire detection with timestamp + pinpoint origin (user wants my opinion: would it work, how, would judges like it)
+  4. Explain the Tavily flow (VLM → Nemotron → Tavily → output — is that how it works?)
+
+**1. Python backend snippets added to background code**
+- Cloned `SimonCurda/Hazsight` repo to inspect backend. Found only 1 Python file: `backend/src/hazsight/api/analyze.py` (154 lines — FastAPI route for VLM analysis via Nebius Token Factory). The `ai/schemas.py` referenced by the import doesn't exist yet (backend is WIP).
+- Copied `analyze.py` to `/home/z/my-project/backend-snippets/analyze.py` (real backend code).
+- Created representative `schemas.py` (Pydantic models: BoundingBox, DetectedHazard, SceneAnalysisResponse, RiskSeverity enum, HazardCategory enum) and `config.py` (Nebius Token Factory config, model names, Tavily key) — based on the worklog's description of what the backend should look like.
+- Updated `/api/code-snippets/route.ts`:
+  - Added `backend-snippets` to SOURCE_DIRS
+  - Added `.py` to FILE_EXTENSIONS
+  - Comment prefix is now `#` for Python files, `//` for TypeScript (auto-detected by extension)
+- Verified: fetched snippets 5 times — `# schemas.py` appeared in the 5th fetch. Mix of TS + Python now shows in background.
+
+**2. Monitoring API + dashboard built**
+- `GET /api/jobs?limit=50` endpoint (`src/app/api/jobs/route.ts`):
+  - Lists all analysis jobs, newest first
+  - Returns `{ jobs: JobResult[], total, limit }`
+  - Pagination via `?limit` (default 50, max 200)
+  - Each job includes: job_id, status, image_url, overall_safety_score, hazards, created_at, completed_at, tavily_live
+- Added `listJobs(limit)` function to `job-store.ts` — returns all jobs sorted by created_at desc.
+- `MonitoringView` component (`src/components/hazsight/monitoring-view.tsx`, 230 lines):
+  - Header with "Monitoring Dashboard" title + subtitle explaining the API (`POST /api/analyze`)
+  - 3 stat cards: total scans, critical hazards count, avg safety score (all with `hazsight-glass` frosted glass)
+  - Score trend mini-chart (bar chart of last 12 scans, color-coded by score)
+  - Job grid: cards with image thumbnail, score badge overlay, timestamp, hazard count, top severity badge
+  - Click a card → switches to results view with that job's data
+  - Empty state: "No scans yet" with CTA to start a scan
+  - Auto-refresh every 10s (simulates live monitoring — polls /api/jobs)
+  - "Refresh" button (manual refresh) + "Manual scan" button (goes to upload view)
+- Wired into `page.tsx`:
+  - Added 'monitoring' to View state machine
+  - "Monitoring" button in header nav (visible from any view, Activity icon)
+  - `handleMonitoringClick()` → switches to monitoring view
+  - `handleJobSelectFromMonitoring(jobResult)` → sets result + previewUrl, switches to results view
+- Verified via agent-browser: dashboard renders with stats (2 total scans, 2 critical, 42/100 avg), score trend chart (red bars), and 2 job cards (warehouse thumbnails, 42/100 score badges, timestamps, CRITICAL severity). Auto-refresh works.
+- `bun run lint` — 0 errors.
+
+**3. Fire detection — opinion (see response below, not yet implemented)**
+- User wants: fire detection with timestamp + pinpoint where fire started. Future idea: suspicious person behavior. Start with fire.
+- Discussed: yes it would work, judges would love it, here's how.
+
+**4. Tavily flow — clarified (see response below)**
+- User's understanding is correct. Explained the actual flow.
+
+Stage Summary:
+- Background code now shows a MIX of TypeScript (frontend) + Python (backend) — `analyze.py`, `schemas.py`, `config.py` snippets appear alongside `nebius.ts`, `tavily.ts`, `job-store.ts`, etc.
+- Monitoring API ready: `GET /api/jobs` lists all analyses. `POST /api/analyze` already accepts `image_url` (perfect for cron/camera integration).
+- Monitoring dashboard built: stats + score trend + job grid, auto-refreshes every 10s. Accessible via "Monitoring" button in header.
+- Files changed: `backend-snippets/analyze.py` (new, copied from repo), `backend-snippets/schemas.py` (new, representative), `backend-snippets/config.py` (new, representative), `src/app/api/code-snippets/route.ts` (added Python), `src/lib/job-store.ts` (listJobs function), `src/app/api/jobs/route.ts` (new), `src/components/hazsight/monitoring-view.tsx` (new), `src/app/page.tsx` (monitoring view + header button).
+
+Next priorities:
+- Fire detection feature (discussed — user wants to start with this next).
+- Real NEBIUS_API_KEY + TAVILY_API_KEY testing.
+- Deploy to Vercel.
+- API documentation section on landing page (show jury it's API-first).
+- "Suspicious person behavior" detection (future, after fire).
