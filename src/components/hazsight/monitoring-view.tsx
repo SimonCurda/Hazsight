@@ -244,6 +244,17 @@ export function MonitoringView({ onJobSelect, onUploadClick }: MonitoringViewPro
         </Card>
       )}
 
+      {/* Scan history — photo grid of all past analyses */}
+      <div className="flex items-center gap-2 pt-2">
+        <Clock className="h-4 w-4 text-muted-foreground" />
+        <h2 className="font-mono text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Scan History
+        </h2>
+        <span className="text-[10px] text-muted-foreground/60">
+          ({jobs.length} scan{jobs.length === 1 ? '' : 's'} · click any to view full results)
+        </span>
+      </div>
+
       {/* Jobs grid */}
       {jobs.length === 0 ? (
         <Card className="hazsight-glass border-border/40 bg-card/40">
@@ -329,10 +340,36 @@ export function MonitoringView({ onJobSelect, onUploadClick }: MonitoringViewPro
                           topSeverity === 'MEDIUM' && 'border-lime-500/40 text-lime-400',
                           topSeverity === 'LOW' && 'border-emerald-500/40 text-emerald-400',
                         )}>
+                          {topSeverity === 'CRITICAL' && <Flame className="h-2.5 w-2.5" />}
                           {topSeverity}
                         </Badge>
                       )}
                     </div>
+                    {/* Hazard category summary — what was wrong */}
+                    {job.hazards.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {job.hazards.slice(0, 4).map((h, hidx) => (
+                          <span
+                            key={hidx}
+                            className={cn(
+                              'rounded px-1 py-0.5 font-mono text-[8px] uppercase tracking-wide',
+                              h.severity === 'CRITICAL' && 'bg-red-500/15 text-red-400',
+                              h.severity === 'HIGH' && 'bg-orange-500/15 text-orange-400',
+                              h.severity === 'MEDIUM' && 'bg-lime-500/15 text-lime-400',
+                              h.severity === 'LOW' && 'bg-emerald-500/15 text-emerald-400',
+                            )}
+                          >
+                            {h.category === 'FIRE_SMOKE' ? <Flame className="inline h-2 w-2" /> : null}
+                            {h.category.replace(/_/g, ' ').slice(0, 12)}
+                          </span>
+                        ))}
+                        {job.hazards.length > 4 && (
+                          <span className="text-[8px] text-muted-foreground">
+                            +{job.hazards.length - 4} more
+                          </span>
+                        )}
+                      </div>
+                    )}
                     <p className="font-mono text-[10px] text-muted-foreground">
                       {job.hazards.length} hazard{job.hazards.length === 1 ? '' : 's'} detected
                       {job.tavily_live && ' · live Tavily'}

@@ -28,8 +28,8 @@ interface ScrambleTextProps {
 export function ScrambleText({
   text,
   className,
-  charDuration = 8,
-  stagger = 35,
+  charDuration = 14, // frames per char (was 8 — longer scramble)
+  stagger = 55, // ms between chars (was 35 — slower cascade)
   as = 'span',
 }: ScrambleTextProps) {
   const ref = useRef<HTMLSpanElement>(null)

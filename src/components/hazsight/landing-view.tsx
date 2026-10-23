@@ -203,7 +203,7 @@ export function LandingView({ onUploadClick }: LandingViewProps) {
             {'// Process'}
           </p>
           <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
-            Three-step pipeline
+            <ScrambleText text="Three-step pipeline" as="span" />
           </h2>
           <p className="mt-3 text-sm text-muted-foreground">
             No 8-hour safety audits. No external inspector visits. Just upload, scan, export.
@@ -261,7 +261,7 @@ export function LandingView({ onUploadClick }: LandingViewProps) {
               {'// Detection'}
             </p>
             <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
-              What Hazsight detects
+              <ScrambleText text="What Hazsight detects" as="span" />
             </h2>
             <p className="mt-3 text-sm text-muted-foreground">
               8 hazard classes detected by Nemotron 3 Ultra. Severity scored Low → Critical.
@@ -304,7 +304,7 @@ export function LandingView({ onUploadClick }: LandingViewProps) {
             {'// Infrastructure'}
           </p>
           <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
-            Built on open infrastructure
+            <ScrambleText text="Built on open infrastructure" as="span" />
           </h2>
           <p className="mt-3 text-sm text-muted-foreground">
             Open-source NVIDIA models · Nebius Token Factory · OpenAI-compatible API
@@ -352,81 +352,87 @@ export function LandingView({ onUploadClick }: LandingViewProps) {
               {'// Developer API'}
             </p>
             <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
-              API-first. Automate your safety scans.
+              <ScrambleText text="API-first. Automate your safety scans." as="span" />
             </h2>
             <p className="mx-auto mt-3 max-w-2xl text-sm text-muted-foreground">
               Point a camera or cron job at <code className="rounded bg-muted px-1 font-mono text-xs text-lime-400">POST /api/analyze</code> and get structured hazard data back. Built for continuous monitoring of warehouses, factories, and job sites.
             </p>
           </div>
 
-          {/* Terminal-style API docs */}
-          <div className="hazsight-glass overflow-hidden rounded-xl border border-border/40 bg-card/60 shadow-lg shadow-black/20">
-            {/* Terminal header */}
-            <div className="flex items-center gap-2 border-b border-border/40 px-4 py-2.5">
-              <span className="h-3 w-3 rounded-full bg-red-500/70" />
-              <span className="h-3 w-3 rounded-full bg-amber-500/70" />
-              <span className="h-3 w-3 rounded-full bg-emerald-500/70" />
-              <span className="ml-2 font-mono text-[10px] text-muted-foreground">
-                hazsight-api — bash
-              </span>
-            </div>
-            {/* Terminal body */}
-            <div className="space-y-3 p-5 font-mono text-xs leading-relaxed">
-              <div>
-                <span className="text-emerald-400">$</span>{' '}
-                <span className="text-muted-foreground"># Submit a photo for analysis</span>
-              </div>
-              <div className="break-all text-foreground/80">
-                <span className="text-emerald-400">curl</span> -X POST{' '}
-                <span className="text-amber-400">https://hazsight.vercel.app/api/analyze</span>{' '}
-                \<br />
-                &nbsp;&nbsp;-H <span className="text-lime-400">&quot;Content-Type: application/json&quot;</span> \<br />
-                &nbsp;&nbsp;-d <span className="text-lime-400">{`'{"image_url": "https://cam-1.local/shot.jpg"}'`}</span>
-              </div>
-              <div className="text-muted-foreground">
-                {'→ { "job_id": "job-...", "status": "completed" }'}
-              </div>
-              <div className="pt-2">
-                <span className="text-emerald-400">$</span>{' '}
-                <span className="text-muted-foreground"># List all scans (monitoring dashboard)</span>
-              </div>
-              <div className="text-foreground/80">
-                <span className="text-emerald-400">curl</span>{' '}
-                <span className="text-amber-400">https://hazsight.vercel.app/api/jobs?limit=50</span>
-              </div>
-              <div className="text-muted-foreground">
-                {'→ { "jobs": [...], "total": 142 }'}
-              </div>
-              <div className="pt-2">
-                <span className="text-emerald-400">$</span>{' '}
-                <span className="text-muted-foreground"># Get PDF report for a scan</span>
-              </div>
-              <div className="text-foreground/80">
-                <span className="text-emerald-400">curl</span>{' '}
-                <span className="text-amber-400">https://hazsight.vercel.app/api/reports/job-123</span>{' '}
-                -o report.pdf
-              </div>
-            </div>
-          </div>
-
-          {/* Endpoint table */}
-          <div className="mt-6 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {/* Endpoint cards — each endpoint with method, path, description, example */}
+          <div className="grid gap-3">
             {[
-              { method: 'POST', path: '/api/analyze', desc: 'Submit image for VLM analysis' },
-              { method: 'GET', path: '/api/jobs', desc: 'List all scans (monitoring)' },
-              { method: 'GET', path: '/api/jobs/:id', desc: 'Get job status + hazards' },
-              { method: 'GET', path: '/api/jobs/:id/trace', desc: 'Agent reasoning timeline' },
-              { method: 'GET', path: '/api/reports/:id', desc: 'Download PDF report' },
-              { method: 'GET', path: '/api/tavily-test', desc: 'Verify Tavily API key' },
+              {
+                method: 'POST',
+                path: '/api/analyze',
+                desc: 'Submit a photo for AI safety analysis. Accepts an image URL (JSON) or multipart form upload.',
+                example: `curl -X POST /api/analyze \\
+  -H "Content-Type: application/json" \\
+  -d '{"image_url": "https://cam-1.local/shot.jpg"}'`,
+                response: '{ "job_id": "job-...", "status": "completed" }',
+              },
+              {
+                method: 'GET',
+                path: '/api/jobs',
+                desc: 'List all analysis jobs — newest first. Powers the monitoring dashboard.',
+                example: 'curl /api/jobs?limit=50',
+                response: '{ "jobs": [...], "total": 142 }',
+              },
+              {
+                method: 'GET',
+                path: '/api/jobs/:id',
+                desc: 'Get full job result — hazards, scores, regulations, scene description.',
+                example: 'curl /api/jobs/job-abc123',
+                response: '{ "overall_safety_score": 42, "hazards": [...] }',
+              },
+              {
+                method: 'GET',
+                path: '/api/reports/:id',
+                desc: 'Download a PDF safety audit report with hazards + regulation citations.',
+                example: 'curl /api/reports/job-abc123 -o report.pdf',
+                response: '→ binary PDF (2 pages)',
+              },
+              {
+                method: 'GET',
+                path: '/api/tavily-test',
+                desc: 'Verify your Tavily API key works before deploying. Returns a sample search.',
+                example: 'curl /api/tavily-test',
+                response: '{ "available": true, "results": [...] }',
+              },
+              {
+                method: 'GET',
+                path: '/api/nebius-test',
+                desc: 'Verify your Nebius Token Factory key + model names work.',
+                example: 'curl /api/nebius-test',
+                response: '{ "available": true, "test_response": "OK" }',
+              },
             ].map((ep) => (
               <div
                 key={ep.path}
-                className="hazsight-glass flex items-center gap-2 rounded-lg border border-border/40 bg-card/40 px-3 py-2"
+                className="hazsight-glass overflow-hidden rounded-lg border border-border/40 bg-card/50 transition-all hover:border-lime-500/30"
               >
-                <span className="rounded bg-lime-500/15 px-1.5 py-0.5 font-mono text-[9px] font-bold text-lime-400">
-                  {ep.method}
-                </span>
-                <code className="flex-1 font-mono text-[11px] text-foreground/80">{ep.path}</code>
+                <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start">
+                  {/* Method + path */}
+                  <div className="flex items-center gap-2 sm:w-64 sm:flex-shrink-0">
+                    <span className={`rounded px-2 py-0.5 font-mono text-[10px] font-bold ${ep.method === 'POST' ? 'bg-amber-500/20 text-amber-400' : 'bg-lime-500/15 text-lime-400'}`}>
+                      {ep.method}
+                    </span>
+                    <code className="font-mono text-xs text-foreground/90">{ep.path}</code>
+                  </div>
+                  {/* Description + example */}
+                  <div className="flex-1 space-y-2">
+                    <p className="text-xs text-muted-foreground">{ep.desc}</p>
+                    <div className="rounded-md border border-border/30 bg-black/40 px-3 py-2">
+                      <p className="break-all font-mono text-[10px] leading-relaxed text-emerald-300/90">
+                        <span className="text-muted-foreground/60">$ </span>
+                        {ep.example}
+                      </p>
+                      <p className="mt-1 break-all font-mono text-[10px] text-muted-foreground/70">
+                        {ep.response}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -469,7 +475,7 @@ export function LandingView({ onUploadClick }: LandingViewProps) {
             <ShieldCheck className="h-7 w-7 text-lime-400" />
           </motion.div>
           <h2 className="text-4xl font-bold tracking-tight sm:text-5xl">
-            Ready to inspect?
+            <ScrambleText text="Ready to inspect?" as="span" />
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-sm text-muted-foreground">
             Drop a photo. Get a report. See what your safety audit has been missing.
