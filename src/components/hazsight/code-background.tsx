@@ -77,13 +77,25 @@ export default function CodeBackground() {
       tx: 0.5, ty: 0.5,
     };
 
+    // Scroll parallax — the columns drift vertically as the page scrolls,
+    // creating depth (code floats behind the content). Visible on long pages
+    // like the landing page where the user scrolls past the hero.
+    let scrollY = 0;
+    let targetScrollY = 0;
+
     const onMouseMove = (e: MouseEvent) => {
       mouse.tx = e.clientX / window.innerWidth;
       mouse.ty = e.clientY / window.innerHeight;
     };
 
+    const onScroll = () => {
+      targetScrollY = window.scrollY || window.pageYOffset || 0;
+    };
+
     if (!reduced) {
       window.addEventListener("mousemove", onMouseMove, { passive: true });
+      window.addEventListener("scroll", onScroll, { passive: true });
+      onScroll(); // initialize
     }
 
     // Fetch real snippets from codebase, THEN start typing
@@ -171,12 +183,13 @@ export default function CodeBackground() {
         raf = requestAnimationFrame(tick);
         const t = now - t0;
 
-        // Smooth mouse interpolation (parallax)
+        // Smooth mouse interpolation (parallax) + scroll parallax
         mouse.x += (mouse.tx - mouse.x) * 0.08;
         mouse.y += (mouse.ty - mouse.y) * 0.08;
+        scrollY += (targetScrollY - scrollY) * 0.06;
         if (colsRef.current) {
           const dx = (mouse.x - 0.5) * 36;
-          const dy = (mouse.y - 0.5) * 20;
+          const dy = (mouse.y - 0.5) * 20 + scrollY * 0.12;
           colsRef.current.style.transform = `translate(${dx.toFixed(2)}px, ${dy.toFixed(2)}px)`;
         }
 
@@ -219,6 +232,7 @@ export default function CodeBackground() {
     return () => {
       cancelled = true;
       window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("scroll", onScroll);
     };
   }, []);
 

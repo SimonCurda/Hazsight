@@ -28,6 +28,10 @@ export interface DetectedHazard {
     width: number // percentage 0-100
     height: number // percentage 0-100
   }
+  // Fire-specific fields — only present for FIRE_SMOKE hazards
+  fire_origin_point?: { x: number; y: number } // where fire appears to originate (0-100)
+  fire_severity_level?: 'smoldering' | 'active' | 'spreading' | 'extinguished'
+  fire_detected_at?: string // ISO timestamp when fire was first detected
 }
 
 export interface TraceEvent {
@@ -85,6 +89,10 @@ export const MOCK_HAZARDS: DetectedHazard[] = [
       'Relocate combustible materials at least 1.5m from any heat source. Replace the space heater with a wall-mounted unit with automatic overheat shutoff.',
     confidence: 0.89,
     bounding_box: { x: 18, y: 60, width: 22, height: 28 },
+    // Fire-specific detection fields
+    fire_origin_point: { x: 28, y: 70 },
+    fire_severity_level: 'active',
+    fire_detected_at: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
   },
   {
     id: 'h3',

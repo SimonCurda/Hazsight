@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { motion } from 'framer-motion'
-import { AlertTriangle, MapPin } from 'lucide-react'
+import { AlertTriangle, MapPin, Flame } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { SEVERITY_COLORS, HAZARD_CATEGORY_LABELS } from '@/lib/types'
@@ -103,6 +103,26 @@ export function AnnotatedImage({
           </motion.button>
         )
       })}
+
+      {/* Fire origin point markers — flame icon at the detected fire origin */}
+      {visibleHazards
+        .filter((h) => h.fire_origin_point)
+        .map((hazard, idx) => (
+          <motion.div
+            key={`fire-${idx}`}
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.5 + idx * 0.15, duration: 0.4 }}
+            className="pointer-events-none absolute z-30 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center"
+            style={{
+              left: `${hazard.fire_origin_point!.x}%`,
+              top: `${hazard.fire_origin_point!.y}%`,
+            }}
+          >
+            <div className="absolute inset-0 animate-ping rounded-full bg-red-500/30" />
+            <Flame className="relative h-6 w-6 text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
+          </motion.div>
+        ))}
     </div>
   )
 }

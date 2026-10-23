@@ -15,6 +15,7 @@ import {
   Globe,
   ChevronRight,
   Cpu,
+  Activity,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -26,6 +27,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { ScrambleText } from './scramble-text'
 
 const STEPS = [
   {
@@ -229,7 +231,7 @@ export function LandingView({ onUploadClick }: LandingViewProps) {
                     </span>
                   </div>
                   <CardTitle className="text-2xl font-semibold tracking-tight">
-                    {step.title}
+                    <ScrambleText text={step.title} as="span" />
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -279,7 +281,7 @@ export function LandingView({ onUploadClick }: LandingViewProps) {
                 <span className="text-lime-400">
                   <AlertTriangle className="h-3.5 w-3.5" />
                 </span>
-                <span className="flex-1 text-foreground/90">{hazard}</span>
+                <span className="flex-1 text-foreground/90"><ScrambleText text={hazard} as="span" /></span>
                 <span className="text-[10px] text-muted-foreground/60">
                   [{String(idx + 1).padStart(2, '0')}]
                 </span>
@@ -331,6 +333,116 @@ export function LandingView({ onUploadClick }: LandingViewProps) {
               <span className="text-emerald-400/80">{'// Compliance: '}</span>
               Runs on Nebius Token Factory · Uses NVIDIA Nemotron open-source models · Best Apps &amp; Agents track
             </p>
+          </div>
+        </div>
+      </motion.section>
+
+      {/* Developer API — show judges this is API-first, not just a UI demo */}
+      <motion.section
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: '-100px' }}
+        variants={sectionVariants}
+        className="relative border-y border-border/40"
+      >
+        <div className="absolute inset-0 -z-10 hazsight-grid-bg opacity-30" aria-hidden />
+        <div className="container mx-auto max-w-5xl px-4 py-24">
+          <div className="mb-12 text-center">
+            <p className="hazsight-readout text-xs uppercase tracking-widest text-lime-400/60">
+              {'// Developer API'}
+            </p>
+            <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
+              API-first. Automate your safety scans.
+            </h2>
+            <p className="mx-auto mt-3 max-w-2xl text-sm text-muted-foreground">
+              Point a camera or cron job at <code className="rounded bg-muted px-1 font-mono text-xs text-lime-400">POST /api/analyze</code> and get structured hazard data back. Built for continuous monitoring of warehouses, factories, and job sites.
+            </p>
+          </div>
+
+          {/* Terminal-style API docs */}
+          <div className="hazsight-glass overflow-hidden rounded-xl border border-border/40 bg-card/60 shadow-lg shadow-black/20">
+            {/* Terminal header */}
+            <div className="flex items-center gap-2 border-b border-border/40 px-4 py-2.5">
+              <span className="h-3 w-3 rounded-full bg-red-500/70" />
+              <span className="h-3 w-3 rounded-full bg-amber-500/70" />
+              <span className="h-3 w-3 rounded-full bg-emerald-500/70" />
+              <span className="ml-2 font-mono text-[10px] text-muted-foreground">
+                hazsight-api — bash
+              </span>
+            </div>
+            {/* Terminal body */}
+            <div className="space-y-3 p-5 font-mono text-xs leading-relaxed">
+              <div>
+                <span className="text-emerald-400">$</span>{' '}
+                <span className="text-muted-foreground"># Submit a photo for analysis</span>
+              </div>
+              <div className="break-all text-foreground/80">
+                <span className="text-emerald-400">curl</span> -X POST{' '}
+                <span className="text-amber-400">https://hazsight.vercel.app/api/analyze</span>{' '}
+                \<br />
+                &nbsp;&nbsp;-H <span className="text-lime-400">&quot;Content-Type: application/json&quot;</span> \<br />
+                &nbsp;&nbsp;-d <span className="text-lime-400">{`'{"image_url": "https://cam-1.local/shot.jpg"}'`}</span>
+              </div>
+              <div className="text-muted-foreground">
+                {'→ { "job_id": "job-...", "status": "completed" }'}
+              </div>
+              <div className="pt-2">
+                <span className="text-emerald-400">$</span>{' '}
+                <span className="text-muted-foreground"># List all scans (monitoring dashboard)</span>
+              </div>
+              <div className="text-foreground/80">
+                <span className="text-emerald-400">curl</span>{' '}
+                <span className="text-amber-400">https://hazsight.vercel.app/api/jobs?limit=50</span>
+              </div>
+              <div className="text-muted-foreground">
+                {'→ { "jobs": [...], "total": 142 }'}
+              </div>
+              <div className="pt-2">
+                <span className="text-emerald-400">$</span>{' '}
+                <span className="text-muted-foreground"># Get PDF report for a scan</span>
+              </div>
+              <div className="text-foreground/80">
+                <span className="text-emerald-400">curl</span>{' '}
+                <span className="text-amber-400">https://hazsight.vercel.app/api/reports/job-123</span>{' '}
+                -o report.pdf
+              </div>
+            </div>
+          </div>
+
+          {/* Endpoint table */}
+          <div className="mt-6 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              { method: 'POST', path: '/api/analyze', desc: 'Submit image for VLM analysis' },
+              { method: 'GET', path: '/api/jobs', desc: 'List all scans (monitoring)' },
+              { method: 'GET', path: '/api/jobs/:id', desc: 'Get job status + hazards' },
+              { method: 'GET', path: '/api/jobs/:id/trace', desc: 'Agent reasoning timeline' },
+              { method: 'GET', path: '/api/reports/:id', desc: 'Download PDF report' },
+              { method: 'GET', path: '/api/tavily-test', desc: 'Verify Tavily API key' },
+            ].map((ep) => (
+              <div
+                key={ep.path}
+                className="hazsight-glass flex items-center gap-2 rounded-lg border border-border/40 bg-card/40 px-3 py-2"
+              >
+                <span className="rounded bg-lime-500/15 px-1.5 py-0.5 font-mono text-[9px] font-bold text-lime-400">
+                  {ep.method}
+                </span>
+                <code className="flex-1 font-mono text-[11px] text-foreground/80">{ep.path}</code>
+              </div>
+            ))}
+          </div>
+
+          {/* Cron monitoring callout */}
+          <div className="mt-6 flex items-start gap-3 rounded-lg border border-lime-500/30 bg-lime-500/5 p-4">
+            <Activity className="mt-0.5 h-5 w-5 flex-shrink-0 text-lime-400" />
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                Continuous monitoring
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Set up a cron job or camera script to POST every 15 minutes. Results appear in the{' '}
+                <span className="font-medium text-lime-400">Monitoring Dashboard</span> — with score trends, hazard history, and instant alerts for critical findings like fire or blocked exits.
+              </p>
+            </div>
           </div>
         </div>
       </motion.section>

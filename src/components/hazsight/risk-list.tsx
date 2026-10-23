@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { motion } from 'framer-motion'
-import { AlertTriangle, MapPin, Lightbulb, Gauge, CheckCircle2 } from 'lucide-react'
+import { AlertTriangle, MapPin, Lightbulb, Gauge, CheckCircle2, Flame } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
@@ -119,7 +119,7 @@ export function RiskList({
                   <div className="flex-1 space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge className={cn('gap-1', colors.badge)} variant="default">
-                        <AlertTriangle className="h-3 w-3" />
+                        {hazard.category === 'FIRE_SMOKE' ? <Flame className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
                         {hazard.severity}
                       </Badge>
                       <span className="font-mono text-xs font-semibold uppercase tracking-wide text-muted-foreground">

@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { motion } from 'framer-motion'
-import { Activity, RefreshCw, Camera, TrendingUp, AlertTriangle, Clock } from 'lucide-react'
+import { Activity, RefreshCw, Camera, TrendingUp, AlertTriangle, Clock, Flame } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -58,6 +58,13 @@ export function MonitoringView({ onJobSelect, onUploadClick }: MonitoringViewPro
     j.hazards.some((h) => h.severity === 'CRITICAL'),
   ).length
 
+  // Fire alert: any job with a FIRE_SMOKE hazard that has fire_severity_level set
+  const fireIncidents = jobs.flatMap((j) =>
+    j.hazards
+      .filter((h) => h.category === 'FIRE_SMOKE' && h.fire_severity_level)
+      .map((h) => ({ job: j, hazard: h }))
+  )
+
   const scoreColor = (score: number) =>
     score < 50 ? 'text-red-500' : score < 75 ? 'text-amber-500' : 'text-emerald-500'
 
@@ -82,18 +89,19 @@ export function MonitoringView({ onJobSelect, onUploadClick }: MonitoringViewPro
       transition={{ duration: 0.4 }}
       className="space-y-6"
     >
-      {/* Header + stats */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="space-y-1">
-          <h1 className="font-mono text-3xl font-bold tracking-tight">
-            Monitoring Dashboard
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {'// automated safety scans — cameras or cron jobs POST to '}
-            <code className="rounded bg-muted px-1 font-mono text-xs text-lime-400">/api/analyze</code>
-            {' — results appear here in real time'}
-          </p>
-        </div>
+      {/* Header + stats — frosted glass panel so the code doesn't interrupt text */}
+      <div className="hazsight-glass rounded-xl border border-border/40 bg-card/50 p-4 sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="space-y-1">
+            <h1 className="font-mono text-3xl font-bold tracking-tight">
+              Monitoring Dashboard
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {'// automated safety scans — cameras or cron jobs POST to '}
+              <code className="rounded bg-muted px-1 font-mono text-xs text-lime-400">/api/analyze</code>
+              {' — results appear here in real time'}
+            </p>
+          </div>
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -111,6 +119,58 @@ export function MonitoringView({ onJobSelect, onUploadClick }: MonitoringViewPro
           </Button>
         </div>
       </div>
+      </div>
+
+      {/* Fire alert banner — shows when any scan detected fire */}
+      {fireIncidents.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          transition={{ duration: 0.3 }}
+          className="relative overflow-hidden rounded-xl border border-red-500/50 bg-red-500/10 p-4"
+        >
+          <div className="absolute inset-0 -z-10 animate-pulse bg-gradient-to-r from-red-500/5 via-red-500/10 to-red-500/5" />
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-red-500/20 text-red-400">
+              <Flame className="h-5 w-5 animate-pulse" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <h3 className="font-mono text-sm font-bold uppercase tracking-wide text-red-500">
+                  Fire Alert
+                </h3>
+                <Badge variant="outline" className="border-red-500/50 text-red-400">
+                  {fireIncidents.length} active
+                </Badge>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {fireIncidents.length === 1
+                  ? `Active fire detected in scan from ${new Date(fireIncidents[0].job.created_at).toLocaleString()}`
+                  : `${fireIncidents.length} fire incidents across recent scans`
+                }
+              </p>
+              <div className="mt-2 space-y-1">
+                {fireIncidents.slice(0, 3).map(({ job, hazard }, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => onJobSelect(job)}
+                    className="flex w-full items-center gap-2 rounded-md bg-red-500/5 px-2 py-1 text-left text-[10px] transition-colors hover:bg-red-500/10"
+                  >
+                    <Flame className="h-3 w-3 flex-shrink-0 text-red-400" />
+                    <span className="flex-1 text-foreground/80">
+                      {hazard.fire_severity_level} fire
+                      {hazard.fire_origin_point && ` — origin at (${Math.round(hazard.fire_origin_point.x)}%, ${Math.round(hazard.fire_origin_point.y)}%)`}
+                    </span>
+                    <span className="text-muted-foreground">
+                      {new Date(job.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Stats row */}
       {jobs.length > 0 && (

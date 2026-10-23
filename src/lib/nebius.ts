@@ -74,6 +74,11 @@ For EACH hazard, provide:
 - confidence: 0.0 to 1.0
 - bounding_box: { x, y, width, height } as percentages 0-100 of image dimensions, where (0,0) is top-left. Use 0,0,0,0 if the hazard is "absence of something" (e.g., no fire extinguisher visible).
 
+FIRE DETECTION (for FIRE_SMOKE hazards only):
+- fire_origin_point: { x, y } as percentages 0-100 — the point where the fire/smoke appears to originate (e.g., the heat source, the seat of the fire). This is used to pinpoint the fire's origin on the map.
+- fire_severity_level: one of "smoldering" (early smoke, no visible flame), "active" (visible flames or glowing), "spreading" (fire spreading to adjacent materials), or "extinguished" (post-fire residue, no active flame).
+- fire_detected_at: leave this null — it will be set by the monitoring system.
+
 Also provide:
 - scene_description: objective narrative of the visual scene (environment, equipment, people, lighting, activities)
 - overall_safety_score: 0-100 (100 = completely safe, 0 = critical hazard everywhere)
@@ -90,7 +95,10 @@ Return ONLY valid JSON in this exact shape (no markdown fences, no commentary):
       "affected_area": "...",
       "recommendation": "...",
       "confidence": 0.89,
-      "bounding_box": { "x": 18, "y": 60, "width": 22, "height": 28 }
+      "bounding_box": { "x": 18, "y": 60, "width": 22, "height": 28 },
+      "fire_origin_point": { "x": 28, "y": 70 },
+      "fire_severity_level": "active",
+      "fire_detected_at": null
     }
   ]
 }`

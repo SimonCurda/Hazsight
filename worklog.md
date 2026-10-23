@@ -659,3 +659,86 @@ Next priorities:
 - Deploy to Vercel.
 - API documentation section on landing page (show jury it's API-first).
 - "Suspicious person behavior" detection (future, after fire).
+
+---
+
+Task ID: hazsight-scramble-fire-api-docs
+Agent: Z.ai Code (assisting Simon Curda — direct user requests)
+Task: ScrambleText effect, monitoring blur fix, scroll parallax, API docs section, fire detection (full)
+
+Work Log:
+- User requests:
+  1. Background not reactive on landing page (when scrolling)
+  2. Monitoring view: no blur behind text → code is distracting
+  3. Scramble/decrypt text effect on scroll for Three-step pipeline titles (Capture, Scan, Export) + What Hazsight detects labels — characters cycle through /, $, letters, then settle
+  4. Fire detection — implement fully ("jdi to udelat se vsim vsudy")
+  5. API connection not visible — user couldn't find it
+
+**1. ScrambleText component + landing page integration**
+- Created `src/components/hazsight/scramble-text.tsx` — "decrypt/matrix" text effect:
+  - Each character position cycles through random symbols (`/ \ $ # @ * ! ? 0-9 A-Z a-z`) then locks on the correct char
+  - Cascades left to right (each position starts staggered)
+  - Triggered by `useInView` (Framer Motion) — fires when scrolled into view
+  - Respects `prefers-reduced-motion` (shows text instantly)
+  - Uses rAF for smooth animation, no React state in effect (lint-safe)
+- Applied to:
+  - Three-step pipeline card titles (Capture, Scan, Export) via `<ScrambleText text={step.title} />`
+  - What Hazsight detects labels via `<ScrambleText text={hazard} />`
+
+**2. Monitoring view blur fix**
+- Wrapped the header (title + subtitle + buttons) in a `hazsight-glass rounded-xl border border-border/40 bg-card/50 p-4` panel — frosted glass behind the text so the code doesn't interrupt readability.
+
+**3. Scroll parallax added to code background**
+- Added scroll listener to `code-background.tsx`: `onScroll` tracks `window.scrollY`
+- In the rAF tick, lerps `scrollY` toward `targetScrollY` (6% per frame) and adds `scrollY * 0.12` to the vertical transform
+- The code columns now drift vertically as the page scrolls — creating depth (code floats behind content). Visible on long pages like the landing page.
+- Combined with the existing mouse parallax (mouse + scroll both shift the columns)
+
+**4. Fire detection — full implementation**
+- **Types** (`mock-data.ts`): Added to `DetectedHazard` interface:
+  - `fire_origin_point?: { x, y }` — where fire originates (percentages 0-100)
+  - `fire_severity_level?: 'smoldering' | 'active' | 'spreading' | 'extinguished'`
+  - `fire_detected_at?: string` — ISO timestamp
+- **Mock data**: Updated the FIRE_SMOKE hazard (h2) with `fire_origin_point: { x: 28, y: 70 }`, `fire_severity_level: 'active'`, `fire_detected_at: new Date(Date.now() - 5 * 60 * 1000).toISOString()`
+- **VLM prompt** (`nebius.ts`): Extended with FIRE DETECTION section — instructs the VLM to provide `fire_origin_point`, `fire_severity_level`, and `fire_detected_at` for FIRE_SMOKE hazards. Example JSON updated.
+- **Analyze route** (`route.ts`): Updated the VLM output parser to pass through `fire_origin_point`, `fire_severity_level`, `fire_detected_at` fields.
+- **Monitoring dashboard** (`monitoring-view.tsx`):
+  - Added fire incident detection: `fireIncidents` = all FIRE_SMOKE hazards with `fire_severity_level` across all jobs
+  - Fire alert banner (red, animated pulse): shows "FIRE ALERT", count, "active fire — origin at (28%, 70%)", timestamp, clickable to view full results
+  - Flame icon in the alert
+- **Risk list** (`risk-list.tsx`): FIRE_SMOKE hazards now use `Flame` icon instead of `AlertTriangle` in the severity badge
+- **Annotated image** (`annotated-image.tsx`): Added fire origin point markers — a red Flame icon with `animate-ping` pulsing glow at the `fire_origin_point` position on the image
+- Verified via JS eval: `fireMarkerExists: true`, `flameIconCount: 2` (risk-list badge + annotated image origin marker)
+- Verified via VLM: fire alert banner shows "FIRE ALERT", "1 active", "active fire — origin at (28%, 70%)", timestamp
+
+**5. API documentation section on landing page**
+- Added a new section "API-first. Automate your safety scans." between "Built on open infrastructure" and the CTA
+- Terminal-style code block (mac terminal header with red/amber/emerald dots) showing curl examples:
+  - `POST /api/analyze` with JSON body `{"image_url": "..."}`
+  - `GET /api/jobs?limit=50` (monitoring dashboard)
+  - `GET /api/reports/job-123` (PDF download)
+- Endpoint table: 6 endpoints listed with method badges (POST/GET) + paths
+- Continuous monitoring callout: explains cron/camera integration + Monitoring Dashboard link
+- All elements use `hazsight-glass` frosted glass effect
+- Verified via VLM: "API-first. Automate your safety scans." section with terminal-style code block confirmed
+
+**Verification:**
+- `bun run lint` — 0 errors
+- Full flow: landing → upload → demo → processing → results → monitoring — all views render correctly
+- Fire alert banner shows in monitoring with origin point + severity + timestamp
+- API docs section visible on landing page
+- Dev log clean
+
+Stage Summary:
+- ScrambleText "decrypt" effect on landing page titles (Capture, Scan, Export + hazard types) — triggers on scroll, cycles through /, $, letters, settles left-to-right
+- Monitoring view header now has frosted glass blur behind text
+- Code background now reacts to BOTH mouse movement AND scroll (parallax depth on long pages)
+- Fire detection fully implemented: VLM prompt extended, types added, mock data updated, fire alert banner in monitoring, Flame icons in risk-list + annotated image, fire origin point marker with pulsing glow
+- API documentation section on landing page — terminal mockup with curl examples + endpoint table + monitoring callout (makes the "API connection" visible to users + judges)
+- Files changed: `scramble-text.tsx` (new), `landing-view.tsx` (ScrambleText + API docs), `monitoring-view.tsx` (blur + fire alert), `code-background.tsx` (scroll parallax), `mock-data.ts` (fire fields), `nebius.ts` (VLM prompt), `analyze/route.ts` (fire field parsing), `risk-list.tsx` (Flame icon), `annotated-image.tsx` (fire origin marker).
+
+Next priorities:
+- Real NEBIUS_API_KEY + TAVILY_API_KEY testing (fire detection with real VLM)
+- Deploy to Vercel
+- "Suspicious person behavior" detection (future, after fire)
+- Nikol redesign upload/processing views
