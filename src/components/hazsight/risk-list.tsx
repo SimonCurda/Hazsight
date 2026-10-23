@@ -107,7 +107,7 @@ export function RiskList({
           >
             <Card
               className={cn(
-                'cursor-pointer transition-all',
+                'hazsight-glass bg-card/70 cursor-pointer transition-all',
                 borderClasses.hover,
                 isSelected && borderClasses.selected,
                 // CRITICAL: always-on glowing red border + slow pulse for urgency

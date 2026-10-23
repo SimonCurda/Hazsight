@@ -218,7 +218,7 @@ export function LandingView({ onUploadClick }: LandingViewProps) {
               viewport={{ once: true }}
               variants={cardVariants}
             >
-              <Card className="hazsight-hud hazsight-hover-lift relative h-full overflow-hidden border-border/60 bg-card/40">
+              <Card className="hazsight-glass hazsight-hud hazsight-hover-lift relative h-full overflow-hidden border-border/40 bg-card/60">
                 <CardHeader>
                   <div className="mb-4 flex items-center justify-between">
                     <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-lime-500/30 bg-lime-500/5 text-lime-400">
@@ -274,7 +274,7 @@ export function LandingView({ onUploadClick }: LandingViewProps) {
                 whileInView="visible"
                 viewport={{ once: true }}
                 variants={cardVariants}
-                className="hazsight-readout flex items-center gap-3 rounded-lg border border-border/40 bg-card/40 px-4 py-3 text-sm transition-all hover:border-lime-500/40 hover:bg-lime-500/5"
+                className="hazsight-glass hazsight-readout flex items-center gap-3 rounded-lg border border-border/40 bg-card/60 px-4 py-3 text-sm transition-all hover:border-lime-500/40 hover:bg-lime-500/5"
               >
                 <span className="text-lime-400">
                   <AlertTriangle className="h-3.5 w-3.5" />
@@ -309,7 +309,7 @@ export function LandingView({ onUploadClick }: LandingViewProps) {
           </p>
         </div>
 
-        <div className="rounded-xl border border-border/60 bg-card/40 p-8">
+        <div className="hazsight-glass rounded-xl border border-border/40 bg-card/60 p-8">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {TECH_STACK.map((tech, idx) => (
               <motion.div

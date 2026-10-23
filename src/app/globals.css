@@ -279,6 +279,16 @@
   box-shadow: 0 0 24px oklch(0.78 0.17 125 / 0.25), 0 0 48px oklch(0.78 0.17 125 / 0.1);
 }
 
+/* Frosted glass effect for cards/boxes on top of the code background.
+   Blurs the code behind + boosts saturation so colors stay vivid.
+   Used behind content (hazard cards, summary, citations, etc.) so the
+   background code doesn't interrupt text readability — but stays
+   semi-transparent so it blends nicely (no hard opaque boxes). */
+.hazsight-glass {
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+}
+
 /* Slow urgent pulse for CRITICAL hazard cards — 3s cycle, subtle */
 @keyframes pulse-slow {
   0%, 100% {

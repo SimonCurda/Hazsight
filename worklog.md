@@ -544,3 +544,51 @@ Next priorities:
 - Real API testing end-to-end.
 - Add 4 missing GitHub collaborators.
 - Nikol redesign upload/processing/results views.
+
+---
+
+Task ID: hazsight-glassmorphism
+Agent: Z.ai Code (assisting Simon Curda — direct user requests)
+Task: Add frosted-glass (blurred) background behind content cards so the code doesn't interrupt text readability — only behind some elements, blend nicely
+
+Work Log:
+- User request: "make it so when there is something (for example the detected hazard boxes) they have background that may be blurred for example so the code from background wont be interupting the text. but put thius only behind some text or boxes. make it also blend nicely"
+- Problem: cards used `bg-card/40` or `bg-card/50` (semi-transparent) — the animated code background bled through, making text harder to read.
+- Goal: add `backdrop-filter: blur()` behind content cards (hazard boxes, summary, citations, etc.) so the code is blurred (not eliminated) — text stays readable, and the glass blends nicely (no hard opaque boxes).
+
+**Implementation:**
+1. Created CSS utility `.hazsight-glass` in globals.css:
+   ```css
+   .hazsight-glass {
+     backdrop-filter: blur(16px) saturate(1.4);
+     -webkit-backdrop-filter: blur(16px) saturate(1.4);
+   }
+   ```
+   - `blur(16px)` softens the code behind (medium-strong blur)
+   - `saturate(1.4)` boosts colors through the glass so they stay vivid (not washed out)
+   - Applied alongside semi-transparent backgrounds (`bg-card/60` or `bg-card/70`) so the code is still subtly visible — "blends nicely"
+
+2. Applied `hazsight-glass` + adjusted opacity/border to content cards:
+   - **results-view.tsx** (4 elements):
+     - Summary Card (Safety Audit Report): `hazsight-glass bg-card/70 border-border/40 shadow-lg shadow-black/20`
+     - Scene Description Card: same
+     - Regulations & Citations collapsible: `hazsight-glass bg-card/60 border-border/40 shadow-lg shadow-black/20` (was `bg-card/50`)
+     - Reasoning Trace collapsible: same (was `bg-card/50`)
+   - **risk-list.tsx** (hazard cards — the "detected hazard boxes" the user mentioned):
+     - Each hazard Card: `hazsight-glass bg-card/70` added (keeps severity-color hover/selected borders + CRITICAL pulse)
+   - **landing-view.tsx** (3 elements):
+     - Pipeline step cards (Three-step pipeline): `hazsight-glass bg-card/60 border-border/40` (was `bg-card/40`)
+     - Hazard type cards (What Hazsight detects): same
+     - Tech stack section container: `hazsight-glass bg-card/60` (was `bg-card/40`)
+
+**Verification (via agent-browser + VLM):**
+- Results view: VLM confirms "dark-mode glassmorphism style. The animated typing code is visibly blurred and diffused where it sits behind the content cards. Text is highly readable. Blends seamlessly — semi-transparent, subtle borders, layered floating UI aesthetic."
+- Landing view: VLM confirms "background code blurred behind cards. Text high-contrast and very legible. Semi-transparent glass, sleek layered depth rather than harsh separation."
+- `bun run lint` — 0 errors. Dev log clean.
+
+Stage Summary:
+- Content cards now have a frosted-glass effect: the animated code background is blurred behind them (16px blur + 1.4x saturation boost), so text stays highly readable without the code interrupting.
+- The glass is semi-transparent (60-70% opacity) so the code is still subtly visible — "blends nicely" rather than being hard opaque boxes.
+- Applied selectively to: hazard cards, summary/scene-description/regulations/reasoning-trace cards (results view), pipeline/hazard-type/tech-stack cards (landing view).
+- NOT applied to: the hero heading/text (the code typing behind the hero is part of the aesthetic), buttons, badges, or the annotated image.
+- Files changed: `src/app/globals.css` (`.hazsight-glass` utility), `src/components/hazsight/results-view.tsx` (4 cards), `src/components/hazsight/risk-list.tsx` (hazard cards), `src/components/hazsight/landing-view.tsx` (3 cards).

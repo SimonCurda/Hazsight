@@ -106,7 +106,7 @@ export function ResultsView({ result, events, onReset }: ResultsViewProps) {
       className="space-y-6"
     >
       {/* Summary card */}
-      <Card>
+      <Card className="hazsight-glass bg-card/70 border-border/40 shadow-lg shadow-black/20">
         <CardHeader>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-1">
@@ -164,7 +164,7 @@ export function ResultsView({ result, events, onReset }: ResultsViewProps) {
       </Card>
 
       {/* Scene description */}
-      <Card>
+      <Card className="hazsight-glass bg-card/70 border-border/40 shadow-lg shadow-black/20">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-mono text-sm uppercase tracking-wide text-muted-foreground">
             <FileText className="h-4 w-4" />
@@ -206,7 +206,7 @@ export function ResultsView({ result, events, onReset }: ResultsViewProps) {
         <Collapsible
           open={regsOpen}
           onOpenChange={setRegsOpen}
-          className="rounded-xl border border-border/60 bg-card/50"
+          className="hazsight-glass rounded-xl border border-border/40 bg-card/60 shadow-lg shadow-black/20"
         >
           <CollapsibleTrigger asChild>
             <button className="flex w-full items-center justify-between gap-3 px-6 py-4 text-left transition-colors hover:bg-muted/30">
@@ -304,7 +304,7 @@ export function ResultsView({ result, events, onReset }: ResultsViewProps) {
         <Collapsible
           open={traceOpen}
           onOpenChange={setTraceOpen}
-          className="rounded-xl border border-border/60 bg-card/50"
+          className="hazsight-glass rounded-xl border border-border/40 bg-card/60 shadow-lg shadow-black/20"
         >
           <CollapsibleTrigger asChild>
             <button className="flex w-full items-center justify-between gap-3 px-6 py-4 text-left transition-colors hover:bg-muted/30">
