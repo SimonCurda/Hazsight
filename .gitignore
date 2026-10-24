@@ -56,3 +56,4 @@ server.log
 /skills/
 # Dev server PID files
 .zscripts/
+.env
