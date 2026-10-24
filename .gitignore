@@ -58,3 +58,7 @@ server.log
 .zscripts/
 .env
 bun.lock
+
+# Sandbox artifacts — not part of the project
+skills/
+upload/

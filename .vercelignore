@@ -1,0 +1,17 @@
+# Exclude non-project files from Vercel deployment
+skills/
+upload/
+download/
+examples/
+mini-services/
+tests/
+backend/
+.zscripts/
+dev.log
+server.log
+worklog.md
+AGENT_LOG.md
+DESIGN_LANGUAGE.md
+TODO_BACKGROUND_CODE.md
+Caddyfile
+bun.lock
