@@ -57,3 +57,4 @@ server.log
 # Dev server PID files
 .zscripts/
 .env
+bun.lock
