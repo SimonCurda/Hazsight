@@ -46,6 +46,7 @@ async function runAnalysis(
   jurisdiction: Jurisdiction = 'CZECH',
 ): Promise<void> {
   try {
+    console.log('[analyze] job started:', jobId, '| nebius:', nebiusAvailable(), '| tavily:', tavilyAvailable(), '| jurisdiction:', jurisdiction, '| hasImage:', !!imageBase64, '| imageUrlLen:', imageUrl?.length || 0)
     appendTraceEvent(jobId, {
       type: 'plan',
       model: 'Nemotron 3 Ultra',
@@ -55,6 +56,7 @@ async function runAnalysis(
     await sleep(400)
 
     if (!nebiusAvailable()) {
+      console.log('[analyze] MOCK MODE — NEBIUS_API_KEY not set, using mock hazards')
       // Fallback: emit mock trace events over time, then complete with mock data.
       // Skip pre-written tavily_search events — we emit accurate ones below
       // so the trace reflects whether Tavily is actually live or in mock mode.
@@ -100,10 +102,12 @@ async function runAnalysis(
     })
     await sleep(200)
 
+    console.log('[analyze] calling VLM:', NEBIUS_VLM_MODEL, '| imageBase64 length:', (imageBase64 || '').length)
     const vlmOutput = await analyzeImageWithVlm(
       imageBase64 || '',
       mimeType,
     )
+    console.log('[analyze] VLM response length:', vlmOutput.length, '| preview:', vlmOutput.slice(0, 200))
 
     appendTraceEvent(jobId, {
       type: 'vlm_detect',
@@ -118,6 +122,7 @@ async function runAnalysis(
     })
 
     const jsonOutput = await extractStructuredJson(vlmOutput)
+    console.log('[analyze] JSON extraction done, length:', jsonOutput.length, '| preview:', jsonOutput.slice(0, 200))
 
     let parsed: AnalysisResult
     try {
@@ -160,6 +165,7 @@ async function runAnalysis(
     }
 
     // Tavily: search for relevant safety regulations per hazard category
+    console.log('[analyze] Tavily search starting | jurisdiction:', jurisdiction, '| available:', tavilyAvailable())
     appendTraceEvent(jobId, {
       type: 'tavily_search',
       model: 'Tavily Live Search',
@@ -193,8 +199,10 @@ async function runAnalysis(
     })
 
     completeJob(jobId, { ...parsed, regulations, tavilyLive: tavilyAvailable() })
+    console.log('[analyze] job completed:', jobId, '| hazards:', parsed.hazards.length, '| regulations:', regulations.length, '| score:', parsed.overallSafetyScore)
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
+    console.error('[analyze] job FAILED:', jobId, '| error:', message, '| stack:', err instanceof Error ? err.stack : 'no stack')
     appendTraceEvent(jobId, {
       type: 'plan',
       model: 'Error',

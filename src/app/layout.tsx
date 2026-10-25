@@ -4,6 +4,7 @@ import './globals.css'
 import { Toaster } from '@/components/ui/toaster'
 import { ThemeProvider } from '@/components/theme-provider'
 import CodeBackground from '@/components/hazsight/code-background'
+import { DebugPanel } from '@/components/hazsight/debug-panel'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -65,6 +66,7 @@ export default function RootLayout({
           <CodeBackground />
           {children}
           <Toaster />
+          <DebugPanel />
         </ThemeProvider>
       </body>
     </html>
