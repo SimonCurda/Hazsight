@@ -24,6 +24,7 @@ export interface TavilyResult {
 export interface RegulationCitation {
   hazard_category: string
   query: string
+  jurisdiction: string
   results: TavilyResult[]
 }
 
@@ -43,6 +44,20 @@ const CATEGORY_QUERIES: Record<string, string> = {
     'unsafe behavior workplace safety regulation employer obligations',
   OTHER: 'general workplace safety regulation occupational health safety',
 }
+
+// Jurisdiction-specific search modifiers — appended to the base query so
+// Tavily finds the RIGHT laws for the RIGHT country. Without this, Tavily
+// returns a mix of US/EU/CZ results (whatever ranks highest on Google).
+export const JURISDICTIONS = {
+  CZECH: { label: 'Czech Republic', flag: '🇨🇿', modifier: 'Czech Republic vyhláška zákon právo' },
+  USA: { label: 'USA (OSHA)', flag: '🇺🇸', modifier: 'OSHA 29 CFR 1910 US federal regulation' },
+  JAPAN: { label: 'Japan', flag: '🇯🇵', modifier: 'Japan 消防法 Building Standards Law 労働安全衛生法' },
+  EU: { label: 'EU Directives', flag: '🇪🇺', modifier: 'EU directive European Commission regulation' },
+  UK: { label: 'UK (HSE)', flag: '🇬🇧', modifier: 'UK HSE Health and Safety Executive regulation' },
+  INTERNATIONAL: { label: 'International (ISO)', flag: '🌍', modifier: 'ISO standard international' },
+} as const
+
+export type Jurisdiction = keyof typeof JURISDICTIONS
 
 // Mock regulation citations — used when TAVILY_API_KEY is not set.
 // These are real-ish regulation references (Czech + EU directives + ISO standards).
@@ -161,18 +176,21 @@ export function tavilyAvailable(): boolean {
 /**
  * Search for safety regulations relevant to a hazard category.
  *
- * If TAVILY_API_KEY is set, makes a real Tavily API call.
+ * If TAVILY_API_KEY is set, makes a real Tavily API call with jurisdiction-specific
+ * query modifiers (Czech laws, OSHA, Japan Fire Service Act, etc.).
  * If not, returns pre-written mock citations for the category.
  */
 export async function searchRegulations(
   hazardCategory: string,
   hazardDescription?: string,
+  jurisdiction: Jurisdiction = 'CZECH',
 ): Promise<TavilyResult[]> {
-  // Build query from category + description
+  // Build query from category + description + jurisdiction modifier
   const baseQuery = CATEGORY_QUERIES[hazardCategory] || CATEGORY_QUERIES.OTHER
+  const jurModifier = JURISDICTIONS[jurisdiction].modifier
   const query = hazardDescription
-    ? `${baseQuery} — ${hazardDescription.slice(0, 100)}`
-    : baseQuery
+    ? `${baseQuery} ${jurModifier} — ${hazardDescription.slice(0, 100)}`
+    : `${baseQuery} ${jurModifier}`
 
   if (!tavilyAvailable()) {
     // Mock fallback — return pre-written citations
@@ -217,6 +235,7 @@ export async function searchRegulations(
  */
 export async function searchAllRegulations(
   hazards: Array<{ category: string; description: string }>,
+  jurisdiction: Jurisdiction = 'CZECH',
 ): Promise<RegulationCitation[]> {
   // Deduplicate by category
   const seen = new Set<string>()
@@ -229,10 +248,11 @@ export async function searchAllRegulations(
   const citations: RegulationCitation[] = []
 
   for (const hazard of uniqueCategories) {
-    const results = await searchRegulations(hazard.category, hazard.description)
+    const results = await searchRegulations(hazard.category, hazard.description, jurisdiction)
     citations.push({
       hazard_category: hazard.category,
-      query: CATEGORY_QUERIES[hazard.category] || CATEGORY_QUERIES.OTHER,
+      query: `${CATEGORY_QUERIES[hazard.category] || CATEGORY_QUERIES.OTHER} ${JURISDICTIONS[jurisdiction].modifier}`,
+      jurisdiction,
       results,
     })
   }

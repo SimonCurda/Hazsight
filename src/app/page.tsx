@@ -43,6 +43,7 @@ export default function Home() {
   const [isLive, setIsLive] = React.useState(false)
   const [isPosting, setIsPosting] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+  const [jurisdiction, setJurisdiction] = React.useState<string>('CZECH')
 
   // Poll for trace events + job status while processing.
   React.useEffect(() => {
@@ -145,7 +146,7 @@ export default function Home() {
 
   const handleTryDemo = () => {
     void startAnalysis(
-      JSON.stringify({ image_url: MOCK_IMAGE_URL }),
+      JSON.stringify({ image_url: MOCK_IMAGE_URL, jurisdiction }),
       MOCK_IMAGE_URL,
     )
   }
@@ -247,6 +248,41 @@ export default function Home() {
                 We&apos;ll analyze it for safety hazards in ~30 seconds.
               </p>
             </div>
+
+            {/* Jurisdiction selector — determines which country's laws Tavily searches */}
+            <div className="hazsight-glass mb-6 rounded-xl border border-border/40 bg-card/50 p-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="hazsight-readout text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {'// Jurisdiction:'}
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { code: 'CZECH', label: '🇨🇿 Czech', query: 'Czech Republic vyhláška zákon' },
+                    { code: 'USA', label: '🇺🇸 USA (OSHA)', query: 'OSHA 29 CFR 1910' },
+                    { code: 'JAPAN', label: '🇯🇵 Japan', query: 'Japan 消防法' },
+                    { code: 'EU', label: '🇪🇺 EU', query: 'EU directive' },
+                    { code: 'UK', label: '🇬🇧 UK (HSE)', query: 'UK HSE' },
+                    { code: 'INTERNATIONAL', label: '🌍 ISO', query: 'ISO standard' },
+                  ].map((j) => (
+                    <button
+                      key={j.code}
+                      onClick={() => setJurisdiction(j.code)}
+                      className={`rounded-lg border px-2.5 py-1 font-mono text-[11px] transition-all ${
+                        jurisdiction === j.code
+                          ? 'border-lime-500/60 bg-lime-500/15 text-lime-400'
+                          : 'border-border/40 bg-card/30 text-muted-foreground hover:border-lime-500/30 hover:text-foreground'
+                      }`}
+                    >
+                      {j.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <p className="mt-2 text-[10px] text-muted-foreground/70">
+                Determines which country&apos;s safety regulations Tavily searches for — affects the citations in the report.
+              </p>
+            </div>
+
             <UploadDropzone
               onFileSelected={handleFileSelected}
               onAnalyze={handleAnalyze}

@@ -214,31 +214,65 @@ export function MonitoringView({ onJobSelect, onUploadClick }: MonitoringViewPro
         </div>
       )}
 
-      {/* Score trend mini-chart */}
-      {trendScores.length >= 2 && (
+      {/* Compliance trend chart — safety score over time + threshold lines + trend delta */}
+      {trendScores.length >= 1 && (
         <Card className="hazsight-glass bg-card/60 border-border/40">
           <CardContent className="py-4">
-            <div className="mb-3 flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              <span className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
-                Score trend ({trendScores.length} recent scans)
-              </span>
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-lime-400" />
+                <span className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
+                  Compliance Trend
+                </span>
+                <span className="text-[10px] text-muted-foreground/60">
+                  ({trendScores.length} scan{trendScores.length === 1 ? '' : 's'})
+                </span>
+              </div>
+              {trendScores.length >= 2 && (
+                <div className="flex items-center gap-1.5">
+                  {(() => {
+                    const latest = trendScores[trendScores.length - 1]
+                    const prev = trendScores[trendScores.length - 2]
+                    const delta = latest - prev
+                    const improving = delta > 0
+                    return (
+                      <span className={`flex items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[10px] ${
+                        improving ? 'bg-emerald-500/15 text-emerald-400' : delta < 0 ? 'bg-red-500/15 text-red-400' : 'bg-muted text-muted-foreground'
+                      }`}>
+                        {improving ? '↑' : delta < 0 ? '↓' : '→'} {delta > 0 ? '+' : ''}{delta}
+                      </span>
+                    )
+                  })()}
+                </div>
+              )}
             </div>
-            <div className="flex h-16 items-end gap-1.5">
-              {trendScores.map((score, idx) => (
-                <motion.div
-                  key={idx}
-                  initial={{ height: 0 }}
-                  animate={{ height: `${Math.max(score, 4)}%` }}
-                  transition={{ delay: idx * 0.05, duration: 0.4 }}
-                  className={cn('flex-1 rounded-t-sm', scoreBarColor(score))}
-                  title={`Scan ${idx + 1}: ${score}/100`}
-                />
-              ))}
+            {/* Chart — bars + threshold lines at 75 (safe) and 50 (high risk) */}
+            <div className="relative h-28">
+              {/* Threshold line at 75% (safe) */}
+              <div className="absolute left-0 right-0 border-t border-dashed border-emerald-500/40" style={{ bottom: '75%' }}>
+                <span className="absolute -top-4 right-0 font-mono text-[8px] text-emerald-400/60">safe (75)</span>
+              </div>
+              {/* Threshold line at 50% (high risk) */}
+              <div className="absolute left-0 right-0 border-t border-dashed border-red-500/40" style={{ bottom: '50%' }}>
+                <span className="absolute -top-4 right-0 font-mono text-[8px] text-red-400/60">high risk (50)</span>
+              </div>
+              {/* Bars */}
+              <div className="flex h-full items-end gap-1.5">
+                {trendScores.map((score, idx) => (
+                  <motion.div
+                    key={idx}
+                    initial={{ height: 0 }}
+                    animate={{ height: `${Math.max(score, 3)}%` }}
+                    transition={{ delay: idx * 0.05, duration: 0.4 }}
+                    className={cn('flex-1 rounded-t-sm', scoreBarColor(score))}
+                    title={`Scan ${idx + 1}: ${score}/100`}
+                  />
+                ))}
+              </div>
             </div>
             <div className="mt-2 flex justify-between text-[10px] text-muted-foreground">
-              <span>oldest</span>
-              <span>newest</span>
+              <span>oldest → newest</span>
+              <span>avg: {avgScore}/100</span>
             </div>
           </CardContent>
         </Card>

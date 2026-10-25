@@ -30,6 +30,7 @@ export function ResultsView({ result, events, onReset }: ResultsViewProps) {
   const [traceOpen, setTraceOpen] = React.useState(false)
   const [regsOpen, setRegsOpen] = React.useState(false)
   const [hintVisible, setHintVisible] = React.useState(true)
+  const [showHeatmap, setShowHeatmap] = React.useState(false)
 
   const handleHazardClick = (id: string) => {
     setSelectedHazardId((prev) => (prev === id ? null : id))
@@ -181,14 +182,27 @@ export function ResultsView({ result, events, onReset }: ResultsViewProps) {
       {/* Annotated image + risk list */}
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-2">
-          <h3 className="font-mono text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Annotated Image
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="font-mono text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              Annotated Image
+            </h3>
+            <button
+              onClick={() => setShowHeatmap((v) => !v)}
+              className={`flex items-center gap-1.5 rounded-md border px-2 py-1 font-mono text-[10px] transition-all ${
+                showHeatmap
+                  ? 'border-lime-500/50 bg-lime-500/10 text-lime-400'
+                  : 'border-border/40 bg-card/30 text-muted-foreground hover:border-lime-500/30'
+              }`}
+            >
+              {showHeatmap ? ' heatmap: ON' : ' heatmap: off'}
+            </button>
+          </div>
           <AnnotatedImage
             imageUrl={result.image_url}
             hazards={result.hazards}
             onHazardClick={handleHazardClick}
             selectedHazardId={selectedHazardId}
+            showHeatmap={showHeatmap}
           />
           <p className="text-xs text-muted-foreground">
             Click a hazard box to highlight it in the list below.
@@ -252,12 +266,22 @@ export function ResultsView({ result, events, onReset }: ResultsViewProps) {
           </CollapsibleTrigger>
           <CollapsibleContent>
             <div className="space-y-5 border-t border-border/60 px-6 py-4">
-              {regulations.map((reg) => (
+              {regulations.map((reg) => {
+                const jurLabels: Record<string, string> = {
+                  CZECH: '🇨🇿 Czech', USA: '🇺🇸 USA', JAPAN: '🇯🇵 Japan',
+                  EU: '🇪🇺 EU', UK: '🇬🇧 UK', INTERNATIONAL: '🌍 ISO',
+                }
+                return (
                 <div key={reg.hazard_category} className="space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="secondary" className="font-mono text-[10px] uppercase tracking-wide">
                       {HAZARD_CATEGORY_LABELS[reg.hazard_category as keyof typeof HAZARD_CATEGORY_LABELS] || reg.hazard_category}
                     </Badge>
+                    {reg.jurisdiction && (
+                      <Badge variant="outline" className="gap-1 border-lime-500/30 text-[10px] text-lime-400">
+                        {jurLabels[reg.jurisdiction] || reg.jurisdiction}
+                      </Badge>
+                    )}
                     <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
                       <Search className="h-3 w-3" />
                       <span className="font-mono">{reg.query}</span>
@@ -293,7 +317,8 @@ export function ResultsView({ result, events, onReset }: ResultsViewProps) {
                     ))}
                   </div>
                 </div>
-              ))}
+                )
+              })}
             </div>
           </CollapsibleContent>
         </Collapsible>

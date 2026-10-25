@@ -20,7 +20,7 @@ import {
   NEBIUS_VLM_MODEL,
   NEBIUS_REASONING_MODEL,
 } from '@/lib/nebius'
-import { searchAllRegulations, tavilyAvailable } from '@/lib/tavily'
+import { searchAllRegulations, tavilyAvailable, type Jurisdiction } from '@/lib/tavily'
 import {
   MOCK_HAZARDS,
   MOCK_SCENE_DESCRIPTION,
@@ -42,6 +42,7 @@ async function runAnalysis(
   imageBase64: string | null,
   imageUrl: string,
   mimeType: string,
+  jurisdiction: Jurisdiction = 'CZECH',
 ): Promise<void> {
   try {
     appendTraceEvent(jobId, {
@@ -72,6 +73,7 @@ async function runAnalysis(
       // Search for regulations (mock if no Tavily key, real if key is set)
       const regulations = await searchAllRegulations(
         MOCK_HAZARDS.map((h) => ({ category: h.category, description: h.description })),
+        jurisdiction,
       )
       for (const reg of regulations) {
         appendTraceEvent(jobId, {
@@ -161,11 +163,12 @@ async function runAnalysis(
       type: 'tavily_search',
       model: 'Tavily Live Search',
       content: tavilyAvailable()
-        ? 'Searching for relevant safety regulations via Tavily API...'
+        ? `Searching ${jurisdiction} safety regulations via Tavily API...`
         : 'Tavily API key not set — using mock regulation citations.',
     })
     const regulations = await searchAllRegulations(
       parsed.hazards.map((h) => ({ category: h.category, description: h.description })),
+      jurisdiction,
     )
     for (const reg of regulations) {
       appendTraceEvent(jobId, {
@@ -208,6 +211,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   let imageBase64: string | null = null
   let imageUrl: string
   let mimeType = 'image/png'
+  let jurisdiction: Jurisdiction = 'CZECH'
 
   const contentType = req.headers.get('content-type') || ''
 
@@ -227,6 +231,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   } else {
     const body = await req.json().catch(() => ({}))
     imageUrl = body.image_url || '/demo-warehouse.png'
+    jurisdiction = (body.jurisdiction as Jurisdiction) || 'CZECH'
   }
 
   const jobId = createJob(imageUrl, imageBase64)
@@ -234,7 +239,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // Await processing — ensures the job is complete before we return the response.
   // (Background `void` processing doesn't work reliably in Next.js serverless
   // because the function may be killed after the response is sent.)
-  await runAnalysis(jobId, imageBase64, imageUrl, mimeType)
+  await runAnalysis(jobId, imageBase64, imageUrl, mimeType, jurisdiction)
 
   return NextResponse.json({
     job_id: jobId,

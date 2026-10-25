@@ -204,7 +204,8 @@ export const MOCK_JOB_RESULT: JobResult = {
   regulations: [
     {
       hazard_category: 'UNAUTHORIZED_ZONE',
-      query: 'emergency exit blocked clearance regulation workplace safety',
+      query: 'emergency exit blocked clearance regulation workplace safety Czech Republic vyhláška zákon právo',
+      jurisdiction: 'CZECH',
       results: [
         {
           title: 'vyhl. 246/2001 Sb. § 18 — Emergency exit clearance (Czech)',
@@ -216,7 +217,8 @@ export const MOCK_JOB_RESULT: JobResult = {
     },
     {
       hazard_category: 'FIRE_SMOKE',
-      query: 'fire safety regulation combustible materials near heat source workplace',
+      query: 'fire safety regulation combustible materials near heat source workplace Czech Republic vyhláška zákon právo',
+      jurisdiction: 'CZECH',
       results: [
         {
           title: 'vyhl. 246/2001 Sb. § 12 — Fire prevention (Czech)',

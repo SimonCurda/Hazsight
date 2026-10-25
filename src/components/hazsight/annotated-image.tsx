@@ -13,6 +13,7 @@ interface AnnotatedImageProps {
   hazards: DetectedHazard[]
   onHazardClick?: (hazardId: string) => void
   selectedHazardId?: string | null
+  showHeatmap?: boolean
 }
 
 export function AnnotatedImage({
@@ -20,10 +21,23 @@ export function AnnotatedImage({
   hazards,
   onHazardClick,
   selectedHazardId,
+  showHeatmap = false,
 }: AnnotatedImageProps) {
   const visibleHazards = hazards.filter(
     (h) => h.bounding_box.width > 0 && h.bounding_box.height > 0,
   )
+
+  // Heatmap: each hazard gets a radial gradient overlay at its center.
+  // Color + intensity based on severity (CRITICAL = red, HIGH = orange, MEDIUM = amber, LOW = green)
+  const severityHeatmap = (severity: string) => {
+    switch (severity) {
+      case 'CRITICAL': return 'rgba(239, 68, 68, 0.45)'
+      case 'HIGH': return 'rgba(249, 115, 22, 0.40)'
+      case 'MEDIUM': return 'rgba(245, 158, 11, 0.30)'
+      case 'LOW': return 'rgba(16, 185, 129, 0.25)'
+      default: return 'rgba(100, 100, 100, 0.2)'
+    }
+  }
 
   return (
     <div className="relative overflow-hidden rounded-xl border border-border bg-black">
@@ -101,6 +115,28 @@ export function AnnotatedImage({
               </span>
             </span>
           </motion.button>
+        )
+      })}
+
+      {/* Fire origin point markers — flame icon at the detected fire origin */}
+      {showHeatmap && visibleHazards.map((hazard, idx) => {
+        const cx = hazard.bounding_box.x + hazard.bounding_box.width / 2
+        const cy = hazard.bounding_box.y + hazard.bounding_box.height / 2
+        const radius = Math.max(hazard.bounding_box.width, hazard.bounding_box.height) * 0.8
+        const heatColor = severityHeatmap(hazard.severity)
+        return (
+          <div
+            key={`heat-${idx}`}
+            className="pointer-events-none absolute z-5 mix-blend-screen"
+            style={{
+              left: `${cx - radius / 2}%`,
+              top: `${cy - radius / 2}%`,
+              width: `${radius}%`,
+              height: `${radius}%`,
+              background: `radial-gradient(circle, ${heatColor} 0%, ${heatColor.replace(/[\d.]+\)$/, '0.05)')} 50%, transparent 80%)`,
+              borderRadius: '50%',
+            }}
+          />
         )
       })}
 
