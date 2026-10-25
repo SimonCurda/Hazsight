@@ -11,6 +11,8 @@ import {
   Loader2,
   RotateCcw,
   Activity,
+  Copy,
+  Check,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -386,10 +388,33 @@ export default function Home() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  {error || 'An unknown error occurred during analysis.'}
-                </p>
-                <div className="flex gap-3">
+                <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <span className="font-mono text-[10px] uppercase tracking-wide text-red-400/60">
+                      {'// error details'}
+                    </span>
+                    <button
+                      onClick={() => {
+                        const errText = error || 'An unknown error occurred during analysis.'
+                        void navigator.clipboard.writeText(errText)
+                        const btn = document.getElementById('copy-error-btn')
+                        if (btn) {
+                          btn.textContent = 'Copied!'
+                          setTimeout(() => { btn.textContent = 'Copy' }, 2000)
+                        }
+                      }}
+                      id="copy-error-btn"
+                      className="flex items-center gap-1 rounded-md border border-border/40 bg-card/50 px-2 py-1 font-mono text-[10px] text-muted-foreground transition-all hover:border-lime-500/30 hover:text-lime-400"
+                    >
+                      <Copy className="h-3 w-3" />
+                      Copy
+                    </button>
+                  </div>
+                  <p className="break-all font-mono text-xs text-red-400">
+                    {error || 'An unknown error occurred during analysis.'}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
                   <Button onClick={handleReset} className="gap-2">
                     <RotateCcw className="h-4 w-4" />
                     Try again
@@ -397,6 +422,22 @@ export default function Home() {
                   <Button variant="outline" onClick={handleBackToHome}>
                     Back to home
                   </Button>
+                  <Button
+                    variant="outline"
+                    className="gap-2"
+                    onClick={() => window.open('/api/models', '_blank')}
+                  >
+                    <Activity className="h-4 w-4" />
+                    Check available models
+                  </Button>
+                </div>
+                <div className="rounded-md border border-lime-500/20 bg-lime-500/5 p-3 text-xs text-muted-foreground">
+                  <span className="font-mono text-lime-400">{'// tip: '}</span>
+                  If the error says &quot;model does not exist&quot;, visit{' '}
+                  <code className="rounded bg-muted px-1 font-mono text-[10px] text-lime-400">/api/models</code>{' '}
+                  to see which models are available on Nebius Token Factory. Then update the{' '}
+                  <code className="rounded bg-muted px-1 font-mono text-[10px] text-lime-400">NEBIUS_VLM_MODEL</code>{' '}
+                  env var on Vercel.
                 </div>
               </CardContent>
             </Card>
