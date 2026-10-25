@@ -23,13 +23,13 @@ function getNebiusClient(): OpenAI | null {
 }
 
 export const NEBIUS_REASONING_MODEL =
-  process.env.NEBIUS_REASONING_MODEL || 'nvidia/nemotron-3-ultra'
+  process.env.NEBIUS_REASONING_MODEL || 'nvidia/Nemotron-3-Ultra-550b-a55b'
 
 export const NEBIUS_FAST_MODEL =
-  process.env.NEBIUS_FAST_MODEL || 'nvidia/nemotron-3-super'
+  process.env.NEBIUS_FAST_MODEL || 'nvidia/nemotron-3-super-120b-a12b'
 
 export const NEBIUS_VLM_MODEL =
-  process.env.NEBIUS_VLM_MODEL || 'meta/llama-3.2-11b-vision-instruct'
+  process.env.NEBIUS_VLM_MODEL || 'nvidia/Nemotron-3.5-Super-VL'
 
 export const nebiusAvailable = (): boolean => {
   return !!process.env.NEBIUS_API_KEY

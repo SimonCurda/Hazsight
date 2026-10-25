@@ -46,6 +46,7 @@ export default function Home() {
   const [isPosting, setIsPosting] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
   const [jurisdiction, setJurisdiction] = React.useState<string>('CZECH')
+  const [copied, setCopied] = React.useState(false)
 
   // Poll for trace events + job status while processing.
   React.useEffect(() => {
@@ -396,18 +397,23 @@ export default function Home() {
                     <button
                       onClick={() => {
                         const errText = error || 'An unknown error occurred during analysis.'
-                        void navigator.clipboard.writeText(errText)
-                        const btn = document.getElementById('copy-error-btn')
-                        if (btn) {
-                          btn.textContent = 'Copied!'
-                          setTimeout(() => { btn.textContent = 'Copy' }, 2000)
+                        if (navigator.clipboard && navigator.clipboard.writeText) {
+                          void navigator.clipboard.writeText(errText)
+                        } else {
+                          const ta = document.createElement('textarea')
+                          ta.value = errText
+                          document.body.appendChild(ta)
+                          ta.select()
+                          try { document.execCommand('copy') } catch {}
+                          document.body.removeChild(ta)
                         }
+                        setCopied(true)
+                        setTimeout(() => setCopied(false), 2000)
                       }}
-                      id="copy-error-btn"
                       className="flex items-center gap-1 rounded-md border border-border/40 bg-card/50 px-2 py-1 font-mono text-[10px] text-muted-foreground transition-all hover:border-lime-500/30 hover:text-lime-400"
                     >
-                      <Copy className="h-3 w-3" />
-                      Copy
+                      {copied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+                      {copied ? 'Copied!' : 'Copy'}
                     </button>
                   </div>
                   <p className="break-all font-mono text-xs text-red-400">
