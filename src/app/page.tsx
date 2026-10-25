@@ -108,7 +108,10 @@ export default function Home() {
     setPreviewUrl(null)
   }
 
-  // Shared analysis starter — modular, both handleAnalyze + handleTryDemo call this.
+  // Shared analysis starter — POST is synchronous, returns full result + events.
+  // On Vercel, in-memory store doesn't persist across instances, so we can't
+  // poll. Instead, the POST returns everything and we "play back" the trace
+  // events with delays to simulate the live timeline.
   const startAnalysis = async (body: BodyInit, imgUrl: string) => {
     setPreviewUrl(imgUrl)
     setEvents([])
@@ -125,11 +128,30 @@ export default function Home() {
         : undefined
       const res = await fetch('/api/analyze', { method: 'POST', body, headers })
       const data = await res.json()
-      if (data.job_id) {
-        setJobId(data.job_id)
-      } else {
-        throw new Error(data.error || 'Failed to create job')
+
+      if (data.error || !data.result) {
+        throw new Error(data.error || 'Analysis failed — check debug panel')
       }
+
+      // Switch from "connecting" spinner to live trace timeline
+      setIsPosting(false)
+      setIsLive(true)
+
+      // Play back trace events with delays to simulate live timeline
+      const events = data.events || []
+      for (let i = 0; i < events.length; i++) {
+        setEvents(prev => [...prev, events[i]])
+        await new Promise(r => setTimeout(r, events.length > 15 ? 150 : 300))
+      }
+
+      // Set the result and switch to results view
+      const jobResult: JobResult = {
+        ...data.result,
+        image_url: imgUrl || data.result.image_url,
+      }
+      setResult(jobResult)
+      setIsLive(false)
+      setView('results')
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
       setView('error')

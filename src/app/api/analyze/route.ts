@@ -12,7 +12,6 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { after } from 'next/server'
 import { createJob, appendTraceEvent, completeJob, failJob } from '@/lib/job-store'
 import {
   analyzeImageWithVlm,
@@ -247,13 +246,43 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const jobId = createJob(imageUrl, imageBase64)
 
-  // Use Next.js after() — runs the analysis after the response is sent.
-  // On Vercel, this uses waitUntil() under the hood to keep the function alive.
-  // The client polls GET /api/jobs/[id]/trace for events as they're emitted.
-  after(runAnalysis(jobId, imageBase64, imageUrl, mimeType, jurisdiction))
+  // Synchronous: wait for analysis to complete, then return everything.
+  // On Vercel, in-memory job store doesn't persist across instances,
+  // so polling doesn't work. Instead, we return the full result + all
+  // trace events in the POST response. The client "plays back" the events
+  // with delays to simulate the live trace timeline.
+  await runAnalysis(jobId, imageBase64, imageUrl, mimeType, jurisdiction)
+
+  // Get the completed job + all trace events from the in-memory store
+  const { getJob, getTraceEventsSince } = await import('@/lib/job-store')
+  const completedJob = getJob(jobId)
+  const allEvents = getTraceEventsSince(jobId, 0)
+
+  // Build the full result
+  const result = completedJob ? {
+    job_id: jobId,
+    status: completedJob.status,
+    image_url: imageUrl,
+    scene_description: completedJob.sceneDescription || '',
+    hazards: completedJob.hazards || [],
+    overall_safety_score: completedJob.overallSafetyScore || 0,
+    report_pdf_url: completedJob.reportPdfUrl,
+    regulations: completedJob.regulations || [],
+    tavily_live: completedJob.tavilyLive,
+    created_at: completedJob.createdAt,
+    completed_at: completedJob.completedAt,
+  } : null
 
   return NextResponse.json({
     job_id: jobId,
-    status: 'processing',
+    status: completedJob?.status || 'failed',
+    error: completedJob?.error || null,
+    result,
+    events: allEvents.map(e => ({
+      type: e.type,
+      model: e.model,
+      content: e.content,
+      timestamp: e.timestamp,
+    })),
   })
 }
