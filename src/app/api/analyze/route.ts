@@ -12,6 +12,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { after } from 'next/server'
 import { createJob, appendTraceEvent, completeJob, failJob } from '@/lib/job-store'
 import {
   analyzeImageWithVlm,
@@ -227,7 +228,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const buffer = Buffer.from(await file.arrayBuffer())
     imageBase64 = buffer.toString('base64')
     mimeType = file.type || 'image/png'
-    imageUrl = `/api/images/temp-${Date.now()}`
+    // Use a data URL so the uploaded image displays in the results view
+    // (the previous fake /api/images/temp- URL didn't actually serve the image)
+    imageUrl = `data:${mimeType};base64,${imageBase64}`
   } else {
     const body = await req.json().catch(() => ({}))
     imageUrl = body.image_url || '/demo-warehouse.png'
@@ -236,13 +239,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const jobId = createJob(imageUrl, imageBase64)
 
-  // Await processing — ensures the job is complete before we return the response.
-  // (Background `void` processing doesn't work reliably in Next.js serverless
-  // because the function may be killed after the response is sent.)
-  await runAnalysis(jobId, imageBase64, imageUrl, mimeType, jurisdiction)
+  // Use Next.js after() — runs the analysis after the response is sent.
+  // On Vercel, this uses waitUntil() under the hood to keep the function alive.
+  // The client polls GET /api/jobs/[id]/trace for events as they're emitted.
+  after(runAnalysis(jobId, imageBase64, imageUrl, mimeType, jurisdiction))
 
   return NextResponse.json({
     job_id: jobId,
-    status: 'completed',
+    status: 'processing',
   })
 }
