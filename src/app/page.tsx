@@ -136,6 +136,18 @@ export default function Home() {
         throw new Error(data.error || 'Analysis failed — check debug panel')
       }
 
+      // Store in localStorage for debug panel (works on Vercel where in-memory store doesn't persist)
+      try {
+        localStorage.setItem('hazsight_last_analysis', JSON.stringify({
+          timestamp: new Date().toISOString(),
+          status: data.status,
+          error: data.error,
+          result: data.result,
+          events: data.events,
+          jurisdiction,
+        }))
+      } catch {}
+
       // Switch from "connecting" spinner to live trace timeline
       setIsPosting(false)
       setIsLive(true)

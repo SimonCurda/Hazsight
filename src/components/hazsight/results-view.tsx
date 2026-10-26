@@ -28,9 +28,9 @@ interface ResultsViewProps {
 export function ResultsView({ result, events, onReset }: ResultsViewProps) {
   const [selectedHazardId, setSelectedHazardId] = React.useState<string | null>(null)
   const [traceOpen, setTraceOpen] = React.useState(false)
-  const [regsOpen, setRegsOpen] = React.useState(false)
+  const [regsOpen, setRegsOpen] = React.useState(true)
   const [hintVisible, setHintVisible] = React.useState(true)
-  const [showHeatmap, setShowHeatmap] = React.useState(false)
+  const [showHeatmap, setShowHeatmap] = React.useState(true)
 
   const handleHazardClick = (id: string) => {
     setSelectedHazardId((prev) => (prev === id ? null : id))
@@ -144,11 +144,37 @@ export function ResultsView({ result, events, onReset }: ResultsViewProps) {
               <ShieldAlert className="h-3 w-3 text-lime-500" />
               {result.hazards.length} hazards detected
             </Badge>
-            <Button size="sm" variant="outline" className="gap-1.5 hazsight-glow-hover" asChild>
-              <a href={result.report_pdf_url || '#'} download>
-                <Download className="h-3.5 w-3.5" />
-                Download PDF
-              </a>
+            <Button size="sm" variant="outline" className="gap-1.5 hazsight-glow-hover" onClick={async () => {
+              try {
+                const res = await fetch('/api/reports/generate', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    score: result.overall_safety_score,
+                    sceneDescription: result.scene_description,
+                    hazards: result.hazards,
+                    regulations: result.regulations || [],
+                    jobId: result.job_id,
+                    createdAt: result.created_at,
+                  }),
+                })
+                if (res.ok) {
+                  const blob = await res.blob()
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url
+                  a.download = 'hazsight-safety-audit.pdf'
+                  document.body.appendChild(a)
+                  a.click()
+                  document.body.removeChild(a)
+                  URL.revokeObjectURL(url)
+                }
+              } catch (err) {
+                console.error('PDF download failed:', err)
+              }
+            }}>
+              <Download className="h-3.5 w-3.5" />
+              Download PDF
             </Button>
             <Button size="sm" variant="ghost" className="gap-1.5" onClick={onReset}>
               <RotateCcw className="h-3.5 w-3.5" />

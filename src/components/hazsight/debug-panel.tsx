@@ -45,12 +45,22 @@ interface DebugData {
 export function DebugPanel() {
   const [open, setOpen] = React.useState(false)
   const [data, setData] = React.useState<DebugData | null>(null)
+  const [lastAnalysis, setLastAnalysis] = React.useState<any>(null)
   const [loading, setLoading] = React.useState(false)
   const [autoRefresh, setAutoRefresh] = React.useState(false)
 
   const fetchDebug = React.useCallback(async () => {
     setLoading(true)
     try {
+      // Read from localStorage (works on Vercel — shows the last POST /api/analyze response)
+      let localData: any = null
+      try {
+        const stored = localStorage.getItem('hazsight_last_analysis')
+        if (stored) localData = JSON.parse(stored)
+      } catch {}
+      setLastAnalysis(localData)
+
+      // Also fetch from /api/debug (works locally, may be empty on Vercel)
       const res = await fetch('/api/debug')
       if (res.ok) {
         const d = await res.json()
@@ -147,6 +157,74 @@ export function DebugPanel() {
                       <InfoRow label="Base URL" value={data.env.NEBIUS_BASE_URL} />
                     </div>
                   </div>
+
+                  {/* Last Analysis (from localStorage — works on Vercel) */}
+                  {lastAnalysis && (
+                    <div>
+                      <h3 className="mb-2 font-mono text-xs uppercase tracking-wide text-lime-400">
+                        Last Analysis (client-side)
+                      </h3>
+                      <div className="space-y-3">
+                        {/* Status */}
+                        <div className="flex items-center gap-2 text-[11px]">
+                          <span className={`font-mono font-semibold ${lastAnalysis.status === 'completed' ? 'text-emerald-400' : lastAnalysis.status === 'failed' ? 'text-red-400' : 'text-amber-400'}`}>
+                            {lastAnalysis.status || '?'}
+                          </span>
+                          <span className="text-muted-foreground">{lastAnalysis.timestamp ? new Date(lastAnalysis.timestamp).toLocaleString() : ''}</span>
+                          <span className="ml-auto rounded bg-muted px-1.5 py-0.5 font-mono text-[9px]">
+                            {lastAnalysis.jurisdiction || 'CZECH'}
+                          </span>
+                        </div>
+
+                        {/* Result summary */}
+                        {lastAnalysis.result && (
+                          <div className="grid grid-cols-2 gap-1 text-[10px] text-muted-foreground">
+                            <span>score: <span className="text-foreground">{lastAnalysis.result.overall_safety_score}/100</span></span>
+                            <span>hazards: <span className="text-foreground">{lastAnalysis.result.hazards?.length || 0}</span></span>
+                            <span>regulations: <span className="text-foreground">{lastAnalysis.result.regulations?.length || 0}</span></span>
+                            <span>tavily: <span className={lastAnalysis.result.tavily_live ? 'text-lime-400' : 'text-amber-400'}>{lastAnalysis.result.tavily_live ? 'LIVE' : 'MOCK'}</span></span>
+                          </div>
+                        )}
+
+                        {/* Tavily regulations */}
+                        {lastAnalysis.result?.regulations?.length > 0 && (
+                          <div className="rounded-md border border-lime-500/20 bg-lime-500/5 p-2">
+                            <p className="mb-1 font-mono text-[9px] uppercase text-lime-400">Tavily Citations</p>
+                            {lastAnalysis.result.regulations.slice(0, 4).map((reg: any, i: number) => (
+                              <div key={i} className="mb-1 text-[9px]">
+                                <span className="font-mono text-foreground/80">{reg.hazard_category}</span>
+                                <span className="ml-1 text-muted-foreground">({reg.jurisdiction})</span>
+                                {reg.results?.slice(0, 2).map((r: any, j: number) => (
+                                  <div key={j} className="ml-2 truncate text-muted-foreground/70">
+                                    → {r.title?.slice(0, 60)}
+                                  </div>
+                                ))}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Trace events */}
+                        {lastAnalysis.events?.length > 0 && (
+                          <div>
+                            <p className="mb-1 font-mono text-[9px] uppercase text-muted-foreground">Trace Events ({lastAnalysis.events.length})</p>
+                            <div className="space-y-0.5">
+                              {lastAnalysis.events.map((ev: any, i: number) => (
+                                <div key={i} className="flex gap-2 border-l border-border/40 pl-2 text-[9px]">
+                                  <span className={`font-mono font-semibold ${
+                                    ev.type === 'tavily_search' ? 'text-lime-400' :
+                                    ev.type === 'vlm_analyze' || ev.type === 'vlm_detect' ? 'text-amber-400' :
+                                    ev.type === 'report_ready' ? 'text-emerald-400' : 'text-foreground/60'
+                                  }`}>{ev.type}</span>
+                                  <span className="flex-1 text-muted-foreground">{ev.content?.slice(0, 100)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Recent jobs */}
                   <div>
