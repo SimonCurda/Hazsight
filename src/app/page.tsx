@@ -33,6 +33,38 @@ import {
   type JobResult,
 } from '@/lib/mock-data'
 
+/**
+ * Convert any image file to a PNG data URL, resizing if too large.
+ * Fixes JPEG/JPG/WebP compatibility + reduces body size for Vercel/VLM.
+ */
+async function fileToPngDataUrl(file: File, maxSize: number = 1920): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => {
+      let { width, height } = img
+      // Resize if larger than maxSize on any side
+      if (width > maxSize || height > maxSize) {
+        const ratio = Math.min(maxSize / width, maxSize / height)
+        width = Math.round(width * ratio)
+        height = Math.round(height * ratio)
+      }
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')!
+      ctx.drawImage(img, 0, 0, width, height)
+      const dataUrl = canvas.toDataURL('image/png')
+      URL.revokeObjectURL(img.src)
+      resolve(dataUrl)
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(img.src)
+      reject(new Error('Failed to load image'))
+    }
+    img.src = URL.createObjectURL(file)
+  })
+}
+
 type View = 'landing' | 'uploading' | 'processing' | 'results' | 'monitoring' | 'error'
 
 export default function Home() {
@@ -175,10 +207,15 @@ export default function Home() {
     }
   }
 
-  const handleAnalyze = () => {
-    const formData = new FormData()
-    if (uploadedFile) formData.append('image', uploadedFile)
-    void startAnalysis(formData, previewUrl || '')
+  const handleAnalyze = async () => {
+    if (!uploadedFile) return
+    // Convert image to PNG data URL on the client side.
+    // This fixes: JPEG compatibility, body size limit (resize), VLM format issues.
+    const dataUrl = await fileToPngDataUrl(uploadedFile)
+    void startAnalysis(
+      JSON.stringify({ image_base64: dataUrl.split(',')[1], jurisdiction }),
+      previewUrl || dataUrl,
+    )
   }
 
   const handleTryDemo = () => {

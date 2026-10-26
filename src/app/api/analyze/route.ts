@@ -260,7 +260,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     imageUrl = `data:${mimeType};base64,${imageBase64}`
   } else {
     const body = await req.json().catch(() => ({}))
-    imageUrl = body.image_url || '/demo-warehouse.png'
+    // Support both image_url (demo) and image_base64 (real upload — client converts to PNG)
+    if (body.image_base64) {
+      imageBase64 = body.image_base64
+      mimeType = 'image/png' // client-side canvas always produces PNG
+      imageUrl = `data:image/png;base64,${imageBase64}`
+    } else {
+      imageUrl = body.image_url || '/demo-warehouse.png'
+    }
     jurisdiction = (body.jurisdiction as Jurisdiction) || 'CZECH'
   }
 
