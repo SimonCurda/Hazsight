@@ -123,9 +123,22 @@ async function runAnalysis(
     const jsonOutput = await extractStructuredJson(vlmOutput)
     console.log('[analyze] JSON extraction done, length:', jsonOutput.length, '| preview:', jsonOutput.slice(0, 200))
 
+    // Add raw VLM output to trace (for debugging — shows what the model actually returned)
+    appendTraceEvent(jobId, {
+      type: 'vlm_detect',
+      model: NEBIUS_VLM_MODEL,
+      content: `VLM raw output (${vlmOutput.length} chars): ${vlmOutput.slice(0, 150)}...`,
+    })
+
     let parsed: AnalysisResult
     try {
-      const obj = JSON.parse(jsonOutput)
+      // Try parsing. If it fails, regex-extract { ... } as last resort.
+      let jsonStr = jsonOutput
+      try { JSON.parse(jsonStr) } catch {
+        const match = jsonStr.match(/\{[\s\S]*\}/)
+        if (match) jsonStr = match[0]
+      }
+      const obj = JSON.parse(jsonStr)
       parsed = {
         sceneDescription: obj.scene_description || '',
         hazards: (obj.hazards || []).map(

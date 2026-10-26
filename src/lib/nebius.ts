@@ -119,11 +119,69 @@ Return ONLY valid JSON in this exact shape (no markdown fences, no commentary):
         ],
       },
     ],
-    max_tokens: 2000,
+    max_tokens: 4000,
     temperature: 0.2,
   })
 
-  return response.choices[0]?.message?.content || ''
+  const content = response.choices[0]?.message?.content || ''
+  console.log('[nebius] VLM raw output (first 300 chars):', content.slice(0, 300))
+  return content
+}
+
+/**
+ * Extract a JSON object from text that might have conversational wrapper,
+ * markdown fences, thinking tags, or commentary around it.
+ * Handles: {json}, ```json\n{json}\n```, "I'm ready... {json}", <think>{json}</think>
+ */
+function extractJsonFromText(text: string): string | null {
+  if (!text) return null
+
+  // 1. Strip thinking tags (<think>...</think> or <thought>...</thought>)
+  //    but KEEP the content (it might contain reasoning we want to show)
+  const thinkMatch = text.match(/<think>[\s\S]*?<\/think>/i)
+  if (thinkMatch) {
+    // If there's a JSON object inside the thinking, use it
+    const inner = thinkMatch[0].match(/\{[\s\S]*\}/)
+    if (inner) return inner[0]
+    // Otherwise strip thinking and try the rest
+    text = text.replace(/<think>[\s\S]*?<\/think>/gi, '')
+  }
+
+  // 2. Strip markdown fences (```json ... ``` or ``` ... ```)
+  const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/i)
+  if (fenceMatch) {
+    try {
+      JSON.parse(fenceMatch[1].trim())
+      return fenceMatch[1].trim()
+    } catch {}
+  }
+
+  // 3. Try parsing the whole text as JSON (fast path)
+  try {
+    JSON.parse(text.trim())
+    return text.trim()
+  } catch {}
+
+  // 4. Find the first { and the last } — extract everything between
+  //    This handles "I'm ready... {json}" and "Here's the JSON: {json}"
+  const firstBrace = text.indexOf('{')
+  const lastBrace = text.lastIndexOf('}')
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    const candidate = text.slice(firstBrace, lastBrace + 1)
+    try {
+      JSON.parse(candidate)
+      return candidate
+    } catch {
+      // Try fixing common issues (trailing commas, etc.)
+      const fixed = candidate.replace(/,\s*([}\]])/g, '$1')
+      try {
+        JSON.parse(fixed)
+        return fixed
+      } catch {}
+    }
+  }
+
+  return null
 }
 
 /**
@@ -135,14 +193,13 @@ Return ONLY valid JSON in this exact shape (no markdown fences, no commentary):
 export async function extractStructuredJson(
   vlmOutput: string,
 ): Promise<string> {
-  // Fast path: if it's already valid JSON, return as-is.
-  try {
-    JSON.parse(vlmOutput)
-    return vlmOutput
-  } catch {
-    // Fall through to Nemotron Ultra cleanup.
+  // Fast path: try regex extraction first (handles most cases without Ultra call)
+  const extracted = extractJsonFromText(vlmOutput)
+  if (extracted) {
+    return extracted
   }
 
+  // Fall through to Nemotron Ultra for harder cases
   const client = getNebiusClient()
   if (!client) {
     throw new Error('NEBIUS_API_KEY not set')
@@ -161,7 +218,7 @@ export async function extractStructuredJson(
         content: vlmOutput,
       },
     ],
-    max_tokens: 2000,
+    max_tokens: 4000,
     temperature: 0,
   })
 
