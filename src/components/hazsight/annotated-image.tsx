@@ -31,11 +31,20 @@ export function AnnotatedImage({
   // Color + intensity based on severity (CRITICAL = red, HIGH = orange, MEDIUM = amber, LOW = green)
   const severityHeatmap = (severity: string) => {
     switch (severity) {
-      case 'CRITICAL': return 'rgba(239, 68, 68, 0.45)'
-      case 'HIGH': return 'rgba(249, 115, 22, 0.40)'
-      case 'MEDIUM': return 'rgba(245, 158, 11, 0.30)'
-      case 'LOW': return 'rgba(16, 185, 129, 0.25)'
-      default: return 'rgba(100, 100, 100, 0.2)'
+      case 'CRITICAL': return 'rgba(239, 68, 68, 0.6)'
+      case 'HIGH': return 'rgba(249, 115, 22, 0.55)'
+      case 'MEDIUM': return 'rgba(245, 158, 11, 0.45)'
+      case 'LOW': return 'rgba(16, 185, 129, 0.35)'
+      default: return 'rgba(100, 100, 100, 0.3)'
+    }
+  }
+  const severityRing = (severity: string) => {
+    switch (severity) {
+      case 'CRITICAL': return '2px solid rgba(239, 68, 68, 0.8)'
+      case 'HIGH': return '2px solid rgba(249, 115, 22, 0.7)'
+      case 'MEDIUM': return '2px solid rgba(245, 158, 11, 0.6)'
+      case 'LOW': return '2px solid rgba(16, 185, 129, 0.5)'
+      default: return '2px solid rgba(100, 100, 100, 0.4)'
     }
   }
 
@@ -119,11 +128,12 @@ export function AnnotatedImage({
       })}
 
       {/* Heatmap overlay — colored radial gradients at each hazard's center */}
-      {showHeatmap && visibleHazards.map((hazard, idx) => {
+      {showHeatmap && visibleHazards.length > 0 && visibleHazards.map((hazard, idx) => {
         const cx = hazard.bounding_box.x + hazard.bounding_box.width / 2
         const cy = hazard.bounding_box.y + hazard.bounding_box.height / 2
-        const radius = Math.max(hazard.bounding_box.width, hazard.bounding_box.height) * 0.8
+        const radius = Math.max(hazard.bounding_box.width, hazard.bounding_box.height, 10) * 1.2
         const heatColor = severityHeatmap(hazard.severity)
+        const ringColor = severityRing(hazard.severity)
         return (
           <div
             key={`heat-${idx}`}
@@ -133,7 +143,8 @@ export function AnnotatedImage({
               top: `${cy - radius / 2}%`,
               width: `${radius}%`,
               height: `${radius}%`,
-              background: `radial-gradient(circle, ${heatColor} 0%, ${heatColor.replace(/0\.\d+\)/, '0.1)')} 50%, transparent 80%)`,
+              background: `radial-gradient(circle, ${heatColor} 0%, ${heatColor.replace(/0\.\d+\)/, '0.15)')} 50%, transparent 80%)`,
+              border: ringColor,
               borderRadius: '50%',
             }}
           />

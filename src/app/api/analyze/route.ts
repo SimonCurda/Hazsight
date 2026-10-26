@@ -271,6 +271,23 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     jurisdiction = (body.jurisdiction as Jurisdiction) || 'CZECH'
   }
 
+  // If no base64 but we have a local image path (demo), read it from disk.
+  // Without this, the VLM gets an empty image when using the demo image
+  // in LIVE mode (NEBIUS_API_KEY set).
+  if (!imageBase64 && imageUrl && imageUrl.startsWith('/') && !imageUrl.startsWith('/api/')) {
+    try {
+      const { readFile } = await import('fs/promises')
+      const { join } = await import('path')
+      const filePath = join(process.cwd(), 'public', imageUrl)
+      const buffer = await readFile(filePath)
+      imageBase64 = buffer.toString('base64')
+      mimeType = 'image/png'
+      console.log('[analyze] loaded local image from disk:', imageUrl, '| base64 length:', imageBase64.length)
+    } catch (err) {
+      console.error('[analyze] failed to load local image:', imageUrl, err)
+    }
+  }
+
   const jobId = createJob(imageUrl, imageBase64)
 
   // Synchronous: wait for analysis to complete, then return everything.
