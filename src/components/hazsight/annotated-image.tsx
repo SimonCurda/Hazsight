@@ -118,7 +118,7 @@ export function AnnotatedImage({
         )
       })}
 
-      {/* Fire origin point markers — flame icon at the detected fire origin */}
+      {/* Heatmap overlay — colored radial gradients at each hazard's center */}
       {showHeatmap && visibleHazards.map((hazard, idx) => {
         const cx = hazard.bounding_box.x + hazard.bounding_box.width / 2
         const cy = hazard.bounding_box.y + hazard.bounding_box.height / 2
@@ -127,13 +127,13 @@ export function AnnotatedImage({
         return (
           <div
             key={`heat-${idx}`}
-            className="pointer-events-none absolute z-5 mix-blend-screen"
+            className="pointer-events-none absolute z-20"
             style={{
               left: `${cx - radius / 2}%`,
               top: `${cy - radius / 2}%`,
               width: `${radius}%`,
               height: `${radius}%`,
-              background: `radial-gradient(circle, ${heatColor} 0%, ${heatColor.replace(/[\d.]+\)$/, '0.05)')} 50%, transparent 80%)`,
+              background: `radial-gradient(circle, ${heatColor} 0%, ${heatColor.replace(/0\.\d+\)/, '0.1)')} 50%, transparent 80%)`,
               borderRadius: '50%',
             }}
           />

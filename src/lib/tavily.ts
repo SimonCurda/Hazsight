@@ -49,12 +49,12 @@ const CATEGORY_QUERIES: Record<string, string> = {
 // Tavily finds the RIGHT laws for the RIGHT country. Without this, Tavily
 // returns a mix of US/EU/CZ results (whatever ranks highest on Google).
 export const JURISDICTIONS = {
-  CZECH: { label: 'Czech Republic', flag: '🇨🇿', modifier: 'Czech Republic vyhláška zákon právo' },
-  USA: { label: 'USA (OSHA)', flag: '🇺🇸', modifier: 'OSHA 29 CFR 1910 US federal regulation' },
-  JAPAN: { label: 'Japan', flag: '🇯🇵', modifier: 'Japan 消防法 Building Standards Law 労働安全衛生法' },
-  EU: { label: 'EU Directives', flag: '🇪🇺', modifier: 'EU directive European Commission regulation' },
-  UK: { label: 'UK (HSE)', flag: '🇬🇧', modifier: 'UK HSE Health and Safety Executive regulation' },
-  INTERNATIONAL: { label: 'International (ISO)', flag: '🌍', modifier: 'ISO standard international' },
+  CZECH: { label: 'Czech Republic', flag: '🇨🇿', modifier: 'Česká republika vyhláška 246/2001 Sb. zákoník práce 262/2006 Sb. BOZP požární bezpečnost pracoviště' },
+  USA: { label: 'USA (OSHA)', flag: '🇺🇸', modifier: 'OSHA 29 CFR 1910 US federal regulation workplace safety standard' },
+  JAPAN: { label: 'Japan', flag: '🇯🇵', modifier: 'Japan 消防法 Building Standards Law 労働安全衛生法 Industrial Safety and Health Act' },
+  EU: { label: 'EU Directives', flag: '🇪🇺', modifier: 'EU directive European Commission regulation 89/391/EEC 89/654/EEC workplace safety' },
+  UK: { label: 'UK (HSE)', flag: '🇬🇧', modifier: 'UK HSE Health and Safety at Work Act 1974 regulation workplace safety' },
+  INTERNATIONAL: { label: 'International (ISO)', flag: '🌍', modifier: 'ISO standard international workplace safety 45001' },
 } as const
 
 export type Jurisdiction = keyof typeof JURISDICTIONS
