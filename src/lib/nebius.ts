@@ -36,9 +36,7 @@ export const nebiusAvailable = (): boolean => {
 }
 
 /**
- * Call the NVIDIA-served VLM (Llama 3.2 Vision) on Nebius Token Factory to
- * analyze an image and identify safety hazards.
- *
+ * Call the NVIDIA-served VLM on Nebius Token Factory to analyze an image.
  * Returns structured JSON: { scene_description, hazards, overall_safety_score }
  */
 export async function analyzeImageWithVlm(
@@ -64,26 +62,23 @@ Identify all safety hazards visible in the image. Use these hazard categories:
 For EACH hazard, provide:
 - category: one of the categories above
 - severity: LOW, MEDIUM, HIGH, or CRITICAL
-  - CRITICAL: imminent life-safety hazard (fire, smoke, blocked exit, fall from height)
-  - HIGH: severe risk (flammable near heat, missing mandatory PPE in high-hazard zone)
-  - MEDIUM: notable risk (missing secondary PPE, cluttered pathway)
-  - LOW: minor irregularity
 - description: detailed narrative of the hazard
-- affected_area: spatial location in the image (e.g., "bottom-right near door")
+- affected_area: spatial location in the image
 - recommendation: immediate corrective action
 - confidence: 0.0 to 1.0
-- bounding_box: { x, y, width, height } as percentages 0-100 of image dimensions, where (0,0) is top-left. Use 0,0,0,0 if the hazard is "absence of something" (e.g., no fire extinguisher visible).
+- bounding_box: { x, y, width, height } as percentages 0-100
 
 FIRE DETECTION (for FIRE_SMOKE hazards only):
-- fire_origin_point: { x, y } as percentages 0-100 — the point where the fire/smoke appears to originate (e.g., the heat source, the seat of the fire). This is used to pinpoint the fire's origin on the map.
-- fire_severity_level: one of "smoldering" (early smoke, no visible flame), "active" (visible flames or glowing), "spreading" (fire spreading to adjacent materials), or "extinguished" (post-fire residue, no active flame).
-- fire_detected_at: leave this null — it will be set by the monitoring system.
+- fire_origin_point: { x, y } as percentages 0-100
+- fire_severity_level: "smoldering", "active", "spreading", or "extinguished"
+- fire_detected_at: null
 
 Also provide:
-- scene_description: objective narrative of the visual scene (environment, equipment, people, lighting, activities)
-- overall_safety_score: 0-100 (100 = completely safe, 0 = critical hazard everywhere)
+- scene_description: objective narrative of the visual scene
+- overall_safety_score: 0-100
 
-Return ONLY valid JSON in this exact shape (no markdown fences, no commentary):
+IMPORTANT: Return ONLY valid JSON. Do NOT use newlines inside string values. Keep all strings on a single line. Do not add commentary before or after the JSON.
+
 {
   "scene_description": "...",
   "overall_safety_score": 42,
@@ -119,7 +114,7 @@ Return ONLY valid JSON in this exact shape (no markdown fences, no commentary):
         ],
       },
     ],
-    max_tokens: 4000,
+    max_tokens: 8000,
     temperature: 0.2,
   })
 
@@ -129,55 +124,54 @@ Return ONLY valid JSON in this exact shape (no markdown fences, no commentary):
 }
 
 /**
+ * Fix unescaped newlines inside JSON string values.
+ * VLMs often output multi-line strings with literal newlines, which is
+ * invalid JSON. This scans character-by-character and escapes them.
+ */
+function fixJsonNewlines(input: string): string {
+  let result = ''
+  let inStr = false
+  let esc = false
+  for (let i = 0; i < input.length; i++) {
+    const ch = input[i]
+    if (esc) { result += ch; esc = false; continue }
+    if (ch === '\\') { result += ch; esc = true; continue }
+    if (ch === '"') { inStr = !inStr; result += ch; continue }
+    if (inStr && ch === '\n') { result += '\\n'; continue }
+    if (inStr && ch === '\r') { continue }
+    if (inStr && ch === '\t') { result += '\\t'; continue }
+    result += ch
+  }
+  return result
+}
+
+/**
  * Extract a JSON object from text that might have conversational wrapper,
- * markdown fences, thinking tags, or commentary around it.
- * Handles: {json}, ```json\n{json}\n```, "I'm ready... {json}", <think>{json}</think>
+ * markdown fences, thinking tags, or unescaped newlines.
  */
 function extractJsonFromText(text: string): string | null {
   if (!text) return null
 
-  // 1. Strip thinking tags (<think>...</think> or <thought>...</thought>)
-  //    but KEEP the content (it might contain reasoning we want to show)
-  const thinkMatch = text.match(/<think>[\s\S]*?<\/think>/i)
-  if (thinkMatch) {
-    // If there's a JSON object inside the thinking, use it
-    const inner = thinkMatch[0].match(/\{[\s\S]*\}/)
-    if (inner) return inner[0]
-    // Otherwise strip thinking and try the rest
-    text = text.replace(/<think>[\s\S]*?<\/think>/gi, '')
-  }
+  // 1. Fix unescaped newlines inside JSON string values
+  let work = fixJsonNewlines(text)
 
-  // 2. Strip markdown fences (```json ... ``` or ``` ... ```)
-  const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/i)
+  // 2. Strip markdown fences
+  const fenceMatch = work.match(/```(?:json)?\s*([\s\S]*?)```/i)
   if (fenceMatch) {
-    try {
-      JSON.parse(fenceMatch[1].trim())
-      return fenceMatch[1].trim()
-    } catch {}
+    try { JSON.parse(fenceMatch[1].trim()); return fenceMatch[1].trim() } catch {}
   }
 
-  // 3. Try parsing the whole text as JSON (fast path)
-  try {
-    JSON.parse(text.trim())
-    return text.trim()
-  } catch {}
+  // 3. Try parsing as-is
+  try { JSON.parse(work.trim()); return work.trim() } catch {}
 
-  // 4. Find the first { and the last } — extract everything between
-  //    This handles "I'm ready... {json}" and "Here's the JSON: {json}"
-  const firstBrace = text.indexOf('{')
-  const lastBrace = text.lastIndexOf('}')
-  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-    const candidate = text.slice(firstBrace, lastBrace + 1)
-    try {
-      JSON.parse(candidate)
-      return candidate
-    } catch {
-      // Try fixing common issues (trailing commas, etc.)
+  // 4. Find first { to last }
+  const first = work.indexOf('{')
+  const last = work.lastIndexOf('}')
+  if (first !== -1 && last !== -1 && last > first) {
+    const candidate = work.slice(first, last + 1)
+    try { JSON.parse(candidate); return candidate } catch {
       const fixed = candidate.replace(/,\s*([}\]])/g, '$1')
-      try {
-        JSON.parse(fixed)
-        return fixed
-      } catch {}
+      try { JSON.parse(fixed); return fixed } catch {}
     }
   }
 
@@ -185,15 +179,13 @@ function extractJsonFromText(text: string): string | null {
 }
 
 /**
- * Use Nemotron 3 Ultra to clean up / validate the VLM's output as structured
- * JSON. If the VLM already returned valid JSON, this is a no-op pass-through.
- * If the VLM returned text with markdown fences or commentary, Ultra extracts
- * just the JSON.
+ * Use Nemotron 3 Ultra to extract JSON from VLM output.
+ * Tries regex extraction first (handles most cases without Ultra call).
  */
 export async function extractStructuredJson(
   vlmOutput: string,
 ): Promise<string> {
-  // Fast path: try regex extraction first (handles most cases without Ultra call)
+  // Fast path: try regex extraction first
   const extracted = extractJsonFromText(vlmOutput)
   if (extracted) {
     return extracted
@@ -222,5 +214,8 @@ export async function extractStructuredJson(
     temperature: 0,
   })
 
-  return response.choices[0]?.message?.content || ''
+  const ultraOutput = response.choices[0]?.message?.content || ''
+  // Try extracting from Ultra's output too
+  const ultraExtracted = extractJsonFromText(ultraOutput)
+  return ultraExtracted || ultraOutput
 }

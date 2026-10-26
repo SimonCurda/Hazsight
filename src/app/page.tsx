@@ -389,20 +389,24 @@ export default function Home() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3">
+                <div className="relative rounded-lg border border-red-500/20 bg-red-500/5 p-3">
                   <div className="mb-2 flex items-center justify-between gap-2">
                     <span className="font-mono text-[10px] uppercase tracking-wide text-red-400/60">
                       {'// error details'}
                     </span>
                     <button
+                      type="button"
                       onClick={() => {
                         const errText = error || 'An unknown error occurred during analysis.'
-                        if (navigator.clipboard && navigator.clipboard.writeText) {
-                          void navigator.clipboard.writeText(errText)
-                        } else {
+                        try {
+                          navigator.clipboard.writeText(errText)
+                        } catch {
                           const ta = document.createElement('textarea')
                           ta.value = errText
+                          ta.style.position = 'fixed'
+                          ta.style.opacity = '0'
                           document.body.appendChild(ta)
+                          ta.focus()
                           ta.select()
                           try { document.execCommand('copy') } catch {}
                           document.body.removeChild(ta)
@@ -410,13 +414,12 @@ export default function Home() {
                         setCopied(true)
                         setTimeout(() => setCopied(false), 2000)
                       }}
-                      className="flex items-center gap-1 rounded-md border border-border/40 bg-card/50 px-2 py-1 font-mono text-[10px] text-muted-foreground transition-all hover:border-lime-500/30 hover:text-lime-400"
+                      className="relative z-10 flex items-center gap-1 rounded-md border border-border/40 bg-card px-2 py-1 font-mono text-[10px] text-muted-foreground transition-all hover:border-lime-500/30 hover:text-lime-400 cursor-pointer"
                     >
                       {copied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
                       {copied ? 'Copied!' : 'Copy'}
                     </button>
                   </div>
-                  {/* Scrollable error output — shows raw VLM output when parsing fails */}
                   <pre className="max-h-96 overflow-y-auto whitespace-pre-wrap break-all rounded-md bg-black/40 p-3 font-mono text-[10px] leading-relaxed text-red-400">
                     {error || 'An unknown error occurred during analysis.'}
                   </pre>
