@@ -45,16 +45,48 @@ const CATEGORY_QUERIES: Record<string, string> = {
   OTHER: 'general workplace safety regulation occupational health safety',
 }
 
-// Jurisdiction-specific search modifiers — appended to the base query so
-// Tavily finds the RIGHT laws for the RIGHT country. Without this, Tavily
-// returns a mix of US/EU/CZ results (whatever ranks highest on Google).
+// Jurisdiction-specific search config — query modifier (native language + specific laws)
+// + include_domains (official legal databases like zakonyprolidi.cz for CZ,
+// osha.gov for US, elaws.e-gov.go.jp for Japan, etc.)
+// This ensures Tavily finds the RIGHT country's laws, not just whatever ranks
+// highest on Google.
 export const JURISDICTIONS = {
-  CZECH: { label: 'Czech Republic', flag: '🇨🇿', modifier: 'Česká republika vyhláška 246/2001 Sb. zákoník práce 262/2006 Sb. BOZP požární bezpečnost pracoviště' },
-  USA: { label: 'USA (OSHA)', flag: '🇺🇸', modifier: 'OSHA 29 CFR 1910 US federal regulation workplace safety standard' },
-  JAPAN: { label: 'Japan', flag: '🇯🇵', modifier: 'Japan 消防法 Building Standards Law 労働安全衛生法 Industrial Safety and Health Act' },
-  EU: { label: 'EU Directives', flag: '🇪🇺', modifier: 'EU directive European Commission regulation 89/391/EEC 89/654/EEC workplace safety' },
-  UK: { label: 'UK (HSE)', flag: '🇬🇧', modifier: 'UK HSE Health and Safety at Work Act 1974 regulation workplace safety' },
-  INTERNATIONAL: { label: 'International (ISO)', flag: '🌍', modifier: 'ISO standard international workplace safety 45001' },
+  CZECH: {
+    label: 'Czech Republic',
+    flag: '🇨🇿',
+    modifier: 'Česká republika vyhláška 246/2001 Sb. zákoník práce 262/2006 Sb. BOZP požární bezpečnost pracoviště',
+    domains: ['zakonyprolidi.cz', 'suib.cz', 'mpo.cz', 'mvcr.cz', 'mpsv.cz'],
+  },
+  USA: {
+    label: 'USA (OSHA)',
+    flag: '🇺🇸',
+    modifier: 'OSHA 29 CFR 1910 US federal regulation workplace safety standard',
+    domains: ['osha.gov', 'ecfr.gov', 'dol.gov', 'bls.gov'],
+  },
+  JAPAN: {
+    label: 'Japan',
+    flag: '🇯🇵',
+    modifier: 'Japan 消防法 Building Standards Law 労働安全衛生法 Industrial Safety and Health Act',
+    domains: ['elaws.e-gov.go.jp', 'fdma.go.jp', 'anam.or.jp', 'mhlw.go.jp'],
+  },
+  EU: {
+    label: 'EU Directives',
+    flag: '🇪🇺',
+    modifier: 'EU directive European Commission regulation 89/391/EEC 89/654/EEC workplace safety',
+    domains: ['eur-lex.europa.eu', 'osha.europa.eu', 'ec.europa.eu'],
+  },
+  UK: {
+    label: 'UK (HSE)',
+    flag: '🇬🇧',
+    modifier: 'UK HSE Health and Safety at Work Act 1974 regulation workplace safety',
+    domains: ['legislation.gov.uk', 'hse.gov.uk', 'rospa.com'],
+  },
+  INTERNATIONAL: {
+    label: 'International (ISO)',
+    flag: '🌍',
+    modifier: 'ISO 45001 standard international workplace occupational health safety',
+    domains: ['iso.org', 'ilo.org', 'who.int'],
+  },
 } as const
 
 export type Jurisdiction = keyof typeof JURISDICTIONS
@@ -197,7 +229,9 @@ export async function searchRegulations(
     return MOCK_REGULATIONS[hazardCategory] || MOCK_REGULATIONS.OTHER
   }
 
-  // Real Tavily API call
+  // Real Tavily API call — use include_domains to restrict search to official
+  // legal databases for the selected jurisdiction (zakonyprolidi.cz for CZ,
+  // osha.gov for US, elaws.e-gov.go.jp for Japan, etc.)
   try {
     const response = await fetch('https://api.tavily.com/search', {
       method: 'POST',
@@ -208,6 +242,7 @@ export async function searchRegulations(
         search_depth: 'basic',
         max_results: 3,
         include_answer: false,
+        include_domains: JURISDICTIONS[jurisdiction].domains,
       }),
     })
 
