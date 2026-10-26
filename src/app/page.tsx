@@ -416,9 +416,10 @@ export default function Home() {
                       {copied ? 'Copied!' : 'Copy'}
                     </button>
                   </div>
-                  <p className="break-all font-mono text-xs text-red-400">
+                  {/* Scrollable error output — shows raw VLM output when parsing fails */}
+                  <pre className="max-h-96 overflow-y-auto whitespace-pre-wrap break-all rounded-md bg-black/40 p-3 font-mono text-[10px] leading-relaxed text-red-400">
                     {error || 'An unknown error occurred during analysis.'}
-                  </p>
+                  </pre>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button onClick={handleReset} className="gap-2">

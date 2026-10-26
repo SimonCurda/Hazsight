@@ -163,8 +163,15 @@ async function runAnalysis(
             : 50,
       }
     } catch (parseErr) {
+      // Include the RAW VLM output in the error so the user can see exactly
+      // what the model returned — this is critical for debugging parsing issues
+      const rawPreview = vlmOutput.slice(0, 2000)
+      const jsonPreview = jsonOutput.slice(0, 500)
       throw new Error(
-        `Failed to parse VLM output as JSON: ${(parseErr as Error).message}`,
+        `Failed to parse VLM output as JSON: ${(parseErr as Error).message}\n\n` +
+        `=== RAW VLM OUTPUT (first 2000 chars) ===\n${rawPreview}\n` +
+        `=== END RAW OUTPUT ===\n` +
+        `=== AFTER EXTRACTION (first 500 chars) ===\n${jsonPreview}`,
       )
     }
 
