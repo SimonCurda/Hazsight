@@ -139,6 +139,25 @@ async function runAnalysis(
         if (match) jsonStr = match[0]
       }
       const obj = JSON.parse(jsonStr)
+      // Normalize bounding boxes: VLMs sometimes return 0-1 decimals instead
+      // of 0-100 percentages. If ALL values are < 1, multiply by 100.
+      function normalizeBox(box: { x: number; y: number; width: number; height: number }) {
+        if (!box) return { x: 0, y: 0, width: 0, height: 0 }
+        const vals = [box.x, box.y, box.width, box.height]
+        const allSmall = vals.every(v => typeof v === 'number' && v >= 0 && v <= 1)
+        if (allSmall && (box.x > 0 || box.y > 0 || box.width > 0 || box.height > 0)) {
+          return { x: box.x * 100, y: box.y * 100, width: box.width * 100, height: box.height * 100 }
+        }
+        return box
+      }
+      // Also normalize fire_origin_point
+      function normalizePoint(pt: { x: number; y: number } | undefined) {
+        if (!pt) return undefined
+        if (pt.x >= 0 && pt.x <= 1 && pt.y >= 0 && pt.y <= 1) {
+          return { x: pt.x * 100, y: pt.y * 100 }
+        }
+        return pt
+      }
       parsed = {
         sceneDescription: obj.scene_description || '',
         hazards: (obj.hazards || []).map(
@@ -150,9 +169,9 @@ async function runAnalysis(
             affected_area: h.affected_area || '',
             recommendation: h.recommendation || '',
             confidence: typeof h.confidence === 'number' ? h.confidence : 0.8,
-            bounding_box: h.bounding_box || { x: 0, y: 0, width: 0, height: 0 },
+            bounding_box: normalizeBox(h.bounding_box || { x: 0, y: 0, width: 0, height: 0 }),
             // Fire-specific fields (only present for FIRE_SMOKE hazards)
-            ...(h.fire_origin_point ? { fire_origin_point: h.fire_origin_point } : {}),
+            ...(h.fire_origin_point ? { fire_origin_point: normalizePoint(h.fire_origin_point) } : {}),
             ...(h.fire_severity_level ? { fire_severity_level: h.fire_severity_level as 'smoldering' | 'active' | 'spreading' | 'extinguished' } : {}),
             ...(h.fire_detected_at ? { fire_detected_at: h.fire_detected_at } : {}),
           }),

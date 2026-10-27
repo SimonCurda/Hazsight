@@ -487,33 +487,21 @@ body {
   position: relative;
 }
 
-/* one line of code — hover makes it grow + light up.
-   Lines are the ONLY interactive part of the background — they capture
-   hover, but the empty space around them lets clicks reach the page content. */
+/* one line of code — purely decorative, NOT interactive.
+   pointer-events: none so clicks pass through to content below. */
 .code-line {
   opacity: 0.25 !important;
   position: relative;
   height: 22px;
   white-space: pre;
   opacity: 0.3;
-  pointer-events: auto;
+  pointer-events: none;
   transform-origin: 0 50%;
-  transition: opacity 0.25s ease, transform 0.25s ease, filter 0.25s ease,
-    background 0.25s ease;
+  transition: opacity 0.25s ease;
   will-change: transform, opacity;
 }
 
-.code-line:hover {
-  opacity: 1;
-  transform: scale(1.05) translateX(8px);
-  filter: brightness(1.6) drop-shadow(0 0 14px rgba(52, 211, 153, 0.3));
-  background: linear-gradient(
-    90deg,
-    rgba(52, 211, 153, 0.1),
-    rgba(52, 211, 153, 0) 70%
-  );
-  z-index: 6;
-}
+/* code-line hover removed — lines are non-interactive now */
 
 /* blinking caret of the typewriter */
 .code-caret {
