@@ -13,6 +13,7 @@ import {
   Activity,
   Copy,
   Check,
+  Brain,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
