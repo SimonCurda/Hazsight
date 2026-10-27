@@ -404,6 +404,42 @@ export default function Home() {
               </p>
             </div>
 
+            {/* API status checker — verify Nebius + Tavily keys work before analyzing */}
+            <div className="mb-4 flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={async () => {
+                  const btn = document.getElementById('api-status-btn')
+                  if (btn) btn.textContent = 'Checking...'
+                  try {
+                    const [nebiusRes, tavilyRes] = await Promise.all([
+                      fetch('/api/nebius-test'),
+                      fetch('/api/tavily-test'),
+                    ])
+                    const nebius = await nebiusRes.json()
+                    const tavily = await tavilyRes.json()
+                    const status = document.getElementById('api-status-result')
+                    if (status) {
+                      const nebiusOk = nebius.available ? '✅' : '❌'
+                      const tavilyOk = tavily.available ? '✅' : '❌'
+                      const model = nebius.models?.vlm || 'unknown'
+                      status.innerHTML = `${nebiusOk} Nebius (${model})<br>${tavilyOk} Tavily`
+                      status.classList.remove('hidden')
+                    }
+                    if (btn) btn.textContent = 'Test API'
+                  } catch {
+                    if (btn) btn.textContent = 'Test API'
+                  }
+                }}
+              >
+                <Activity className="h-3.5 w-3.5" />
+                <span id="api-status-btn">Test API</span>
+              </Button>
+              <div id="api-status-result" className="hidden rounded-lg border border-border/40 bg-card/50 px-3 py-1.5 font-mono text-[10px] text-muted-foreground" />
+            </div>
+
             <UploadDropzone
               onFileSelected={handleFileSelected}
               onAnalyze={handleAnalyze}
