@@ -259,16 +259,6 @@ export function ResultsView({ result, events, onReset }: ResultsViewProps) {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                {tavilyLive ? (
-                  <Badge variant="outline" className="gap-1 border-lime-500/40 text-lime-600 dark:text-lime-400">
-                    <span className="h-1.5 w-1.5 rounded-full bg-lime-500 animate-pulse" />
-                    LIVE
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="gap-1 border-amber-500/40 text-amber-600 dark:text-amber-400">
-                    MOCK
-                  </Badge>
-                )}
                 <motion.div
                   animate={{ rotate: regsOpen ? 180 : 0 }}
                   transition={{ duration: 0.2 }}
@@ -339,6 +329,12 @@ export function ResultsView({ result, events, onReset }: ResultsViewProps) {
         </Collapsible>
       )}
 
+      {/* Chat panel — between Regulations and Reasoning Trace */}
+      <ChatPanel
+        result={result}
+        jurisdiction={result.regulations?.[0]?.jurisdiction || 'CZECH'}
+      />
+
       {/* Replay trace — expandable reasoning timeline */}
       {events.length > 0 && (
         <Collapsible
@@ -378,13 +374,6 @@ export function ResultsView({ result, events, onReset }: ResultsViewProps) {
           </CollapsibleContent>
         </Collapsible>
       )}
-
-      {/* Chat panel — moved OUTSIDE motion.div so position:fixed works */}
     </motion.div>
-    <ChatPanel
-      result={result}
-      jurisdiction={result.regulations?.[0]?.jurisdiction || 'CZECH'}
-    />
-    </>
   )
 }

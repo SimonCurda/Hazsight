@@ -150,7 +150,6 @@ export function DebugPanel() {
                     <div className="space-y-1.5">
                       <StatusRow label="NEBIUS_API_KEY" ok={nebiusOk} detail={data.mode.nebius} />
                       <StatusRow label="TAVILY_API_KEY" ok={tavilyOk} detail={data.mode.tavily} />
-                      <StatusRow label="DATABASE_URL" ok={data.env.DATABASE_URL_set} detail={data.env.DATABASE_URL_set ? 'set' : 'not set (ok for demo)'} />
                       <InfoRow label="NODE_ENV" value={data.env.NODE_ENV} />
                       <InfoRow label="VLM Model" value={data.env.NEBIUS_VLM_MODEL} />
                       <InfoRow label="Reasoning Model" value={data.env.NEBIUS_REASONING_MODEL} />
@@ -225,65 +224,6 @@ export function DebugPanel() {
                       </div>
                     </div>
                   )}
-
-                  {/* Recent jobs */}
-                  <div>
-                    <h3 className="mb-2 font-mono text-xs uppercase tracking-wide text-muted-foreground">
-                      Recent Jobs ({data.recent_jobs.length})
-                    </h3>
-                    {data.recent_jobs.length === 0 ? (
-                      <p className="rounded-md border border-border/40 bg-muted/20 p-3 text-xs text-muted-foreground">
-                        No jobs yet. Upload a photo or click "Try with a demo image".
-                      </p>
-                    ) : (
-                      <div className="space-y-3">
-                        {data.recent_jobs.map((job) => (
-                          <div key={job.job_id} className="rounded-lg border border-border/40 bg-muted/20 p-3">
-                            <div className="flex items-center gap-2">
-                              {job.status === 'completed' && <CheckCircle2 className="h-4 w-4 text-emerald-400" />}
-                              {job.status === 'processing' && <RefreshCw className="h-4 w-4 animate-spin text-amber-400" />}
-                              {job.status === 'failed' && <XCircle className="h-4 w-4 text-red-400" />}
-                              {job.status === 'queued' && <AlertCircle className="h-4 w-4 text-muted-foreground" />}
-                              <span className="font-mono text-xs font-semibold">{job.status}</span>
-                              <span className="font-mono text-[10px] text-muted-foreground">{job.job_id.slice(-8)}</span>
-                            </div>
-                            {job.error && (
-                              <p className="mt-2 rounded bg-red-500/10 p-2 text-[10px] text-red-400">{job.error}</p>
-                            )}
-                            <div className="mt-2 grid grid-cols-2 gap-1 text-[10px] text-muted-foreground">
-                              <span>hazards: {job.hazard_count}</span>
-                              <span>regulations: {job.regulation_count}</span>
-                              <span>score: {job.overall_safety_score}</span>
-                              <span>tavily: {job.tavily_live ? 'LIVE' : 'MOCK'}</span>
-                              <span>image: {job.image_url_type}</span>
-                              <span>events: {job.trace_event_count}</span>
-                            </div>
-                            {/* Trace events */}
-                            {job.trace_events.length > 0 && (
-                              <div className="mt-2 space-y-0.5">
-                                {job.trace_events.map((ev, idx) => (
-                                  <div key={idx} className="flex gap-2 border-l border-border/40 pl-2 text-[9px]">
-                                    <span className="font-mono text-muted-foreground/60">
-                                      {new Date(ev.timestamp).toLocaleTimeString('en-US', { hour12: false })}
-                                    </span>
-                                    <span className={`font-mono font-semibold ${
-                                      ev.type === 'tavily_search' ? 'text-lime-400' :
-                                      ev.type === 'vlm_analyze' || ev.type === 'vlm_detect' ? 'text-amber-400' :
-                                      ev.type === 'report_ready' ? 'text-emerald-400' :
-                                      ev.model === 'Error' ? 'text-red-400' : 'text-foreground/60'
-                                    }`}>
-                                      {ev.type}
-                                    </span>
-                                    <span className="flex-1 text-muted-foreground">{ev.content}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
 
                   {/* Help */}
                   <div>
