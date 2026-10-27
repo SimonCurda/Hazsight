@@ -473,47 +473,36 @@ export default function Home() {
                 variant="outline"
                 size="lg"
                 className="gap-2"
-                onClick={handleTryDemo}
-              >
-                <Sparkles className="h-4 w-4 text-lime-500" />
-                Try with a demo image
-              </Button>
-              <Button
-                variant="ghost"
-                size="lg"
-                className="gap-2 text-muted-foreground"
                 onClick={handleLoadSeed}
               >
-                <Brain className="h-4 w-4" />
+                <Brain className="h-4 w-4 text-lime-500" />
                 Load saved results
               </Button>
               <p className="mt-2 text-xs text-muted-foreground">
-                "Demo image" runs real AI · "Saved results" loads pre-built analysis (no credits used)
+                Loads pre-built analysis — no API credits used. Test chatbot, PDF, regulations.
               </p>
-              {/* Upload your own demo images */}
-              <div className="mt-4 flex flex-col items-center gap-2">
-                <p className="text-[10px] text-muted-foreground/60">Or add your own demo images:</p>
-                <div className="flex flex-wrap justify-center gap-2">
-                  <label className="cursor-pointer rounded-lg border border-border/40 bg-card/30 px-3 py-1.5 text-xs text-muted-foreground transition-all hover:border-lime-500/30 hover:text-lime-400">
-                    + Add image
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0]
-                        if (file) {
-                          const jur = jurisdiction === 'CUSTOM' ? (customJurisdiction || 'CZECH') : jurisdiction
-                          const dataUrl = await fileToPngDataUrl(file)
-                          void startAnalysis(
-                            JSON.stringify({ image_base64: dataUrl.split(',')[1], jurisdiction: jur }),
-                            dataUrl,
-                          )
-                        }
-                      }}
-                    />
-                  </label>
-                </div>
+              {/* Upload your own image */}
+              <div className="mt-4">
+                <label className="cursor-pointer rounded-lg border border-lime-500/30 bg-lime-500/5 px-4 py-2 text-sm text-lime-400 transition-all hover:border-lime-500/50 hover:bg-lime-500/10">
+                  + Upload your own image
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0]
+                      if (file) {
+                        const jur = jurisdiction === 'CUSTOM' ? (customJurisdiction || 'CZECH') : jurisdiction
+                        const dataUrl = await fileToPngDataUrl(file)
+                        void startAnalysis(
+                          JSON.stringify({ image_base64: dataUrl.split(',')[1], jurisdiction: jur }),
+                          dataUrl,
+                        )
+                      }
+                    }}
+                  />
+                </label>
+              </div>
                 <p className="text-[10px] text-muted-foreground/50">
                   Upload any photo from your device — it will be analyzed with real AI.
                 </p>

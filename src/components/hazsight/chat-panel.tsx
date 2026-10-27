@@ -66,14 +66,17 @@ export function ChatPanel({ result, jurisdiction }: ChatPanelProps) {
 
   return (
     <>
-      {/* Floating chat button */}
+      {/* Floating chat button — big and visible */}
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-4 left-4 z-50 flex h-12 w-12 items-center justify-center rounded-full border border-lime-500/40 bg-card/80 backdrop-blur-md text-lime-400 shadow-lg transition-all hover:scale-110 hover:bg-lime-500/10"
+        className="fixed bottom-6 left-6 z-[100] flex h-14 w-14 items-center justify-center rounded-full bg-lime-500 text-black shadow-2xl shadow-lime-500/30 transition-all hover:scale-110 hover:bg-lime-400"
         aria-label="Chat with Hazsight AI"
         title="Chat with Hazsight AI about this scene"
       >
-        <MessageSquare className="h-5 w-5" />
+        <MessageSquare className="h-6 w-6" />
+        <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[8px] font-bold text-white">
+          AI
+        </span>
       </button>
 
       <AnimatePresence>

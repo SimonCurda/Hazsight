@@ -108,7 +108,7 @@ Be concise, helpful, and reference specific hazards from the analysis when relev
     }
 
     const response = await client.chat.completions.create({
-      model: NEBIUS_FAST_MODEL,
+      model: 'nvidia/Nemotron-3_5-Lightning',
       messages: [
         { role: 'system', content: systemPrompt + tavilyContext },
         ...history.map(h => ({ role: h.role, content: h.content })),

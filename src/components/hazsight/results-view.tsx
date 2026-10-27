@@ -31,7 +31,7 @@ export function ResultsView({ result, events, onReset }: ResultsViewProps) {
   const [traceOpen, setTraceOpen] = React.useState(false)
   const [regsOpen, setRegsOpen] = React.useState(true)
   const [hintVisible, setHintVisible] = React.useState(true)
-  const [showHeatmap, setShowHeatmap] = React.useState(true)
+  // Heatmap removed — VLMs don't return bounding boxes on real images
 
   const handleHazardClick = (id: string) => {
     setSelectedHazardId((prev) => (prev === id ? null : id))
@@ -210,27 +210,14 @@ export function ResultsView({ result, events, onReset }: ResultsViewProps) {
       {/* Annotated image + risk list */}
       <div className="grid gap-6 lg:grid-cols-2 items-start">
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <h3 className="font-mono text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Annotated Image
-            </h3>
-            <button
-              onClick={() => setShowHeatmap((v) => !v)}
-              className={`flex items-center gap-1.5 rounded-md border px-2 py-1 font-mono text-[10px] transition-all ${
-                showHeatmap
-                  ? 'border-lime-500/50 bg-lime-500/10 text-lime-400'
-                  : 'border-border/40 bg-card/30 text-muted-foreground hover:border-lime-500/30'
-              }`}
-            >
-              {showHeatmap ? ' heatmap: ON' : ' heatmap: off'}
-            </button>
-          </div>
+          <h3 className="font-mono text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Annotated Image
+          </h3>
           <AnnotatedImage
             imageUrl={result.image_url}
             hazards={result.hazards}
             onHazardClick={handleHazardClick}
             selectedHazardId={selectedHazardId}
-            showHeatmap={showHeatmap}
           />
           <p className="text-xs text-muted-foreground">
             Click a hazard box to highlight it in the list below.
