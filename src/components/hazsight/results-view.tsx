@@ -206,7 +206,7 @@ export function ResultsView({ result, events, onReset }: ResultsViewProps) {
       </Card>
 
       {/* Annotated image + risk list */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2 items-start">
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <h3 className="font-mono text-sm font-semibold uppercase tracking-wide text-muted-foreground">

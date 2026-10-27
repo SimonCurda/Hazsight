@@ -687,7 +687,7 @@ body {
   background: rgba(255, 255, 255, 0.08);
 }
 
-/* ---------- syntax colors (no blue/indigo) ---------- */
+/* ---------- syntax colors (no blue/indigo) — dark mode ---------- */
 
 .tk-com {
   color: #5d6673;
@@ -713,6 +713,22 @@ body {
 }
 .tk-txt {
   color: #c3cad6;
+}
+
+/* ---------- light mode overrides for code background ---------- */
+:root:not(.dark) .tk-com { color: #6b7280; }
+:root:not(.dark) .tk-str { color: #92400e; }
+:root:not(.dark) .tk-key { color: #047857; }
+:root:not(.dark) .tk-num { color: #be123c; }
+:root:not(.dark) .tk-tag { color: #0f766e; }
+:root:not(.dark) .tk-fn { color: #7c2d12; }
+:root:not(.dark) .tk-pun { color: #4b5563; }
+:root:not(.dark) .tk-txt { color: #374151; }
+:root:not(.dark) .code-line { opacity: 0.4 !important; }
+:root:not(.dark) .code-col { color: #6b7280; }
+:root:not(.dark) .hazsight-glass {
+  backdrop-filter: blur(12px) saturate(1.2);
+  -webkit-backdrop-filter: blur(12px) saturate(1.2);
 }
 
 /* ---------- ambient layers ---------- */
