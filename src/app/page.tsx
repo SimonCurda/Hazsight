@@ -162,7 +162,22 @@ export default function Home() {
         ? { 'Content-Type': 'application/json' }
         : undefined
       const res = await fetch('/api/analyze', { method: 'POST', body, headers })
-      const data = await res.json()
+
+      // Handle non-JSON responses (Vercel function timeout, error page, etc.)
+      if (!res.ok) {
+        const text = await res.text().catch(() => 'Unknown error')
+        throw new Error(`Server returned ${res.status}: ${text.slice(0, 500)}`)
+      }
+
+      const contentType = res.headers.get('content-type') || ''
+      if (!contentType.includes('application/json')) {
+        const text = await res.text().catch(() => 'Unknown error')
+        throw new Error(`Server returned non-JSON response (possible function timeout):\n${text.slice(0, 500)}`)
+      }
+
+      const data = await res.json().catch(() => {
+        throw new Error('Failed to parse server response — the analysis may have timed out on Vercel (max 60s). Try again or use a smaller image.')
+      })
 
       if (data.error || !data.result) {
         throw new Error(data.error || 'Analysis failed — check debug panel')

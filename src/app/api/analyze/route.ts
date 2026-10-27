@@ -29,7 +29,7 @@ import {
 } from '@/lib/mock-data'
 
 export const runtime = 'nodejs'
-export const maxDuration = 60
+export const maxDuration = 300 // 5 min — Vercel Pro supports up to 300s for synchronous analysis
 
 interface AnalysisResult {
   sceneDescription: string
