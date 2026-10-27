@@ -78,6 +78,7 @@ export default function Home() {
   const [isPosting, setIsPosting] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
   const [jurisdiction, setJurisdiction] = React.useState<string>('CZECH')
+  const [customJurisdiction, setCustomJurisdiction] = React.useState('')
   const [copied, setCopied] = React.useState(false)
 
   // Poll for trace events + job status while processing.
@@ -224,18 +225,18 @@ export default function Home() {
 
   const handleAnalyze = async () => {
     if (!uploadedFile) return
-    // Convert image to PNG data URL on the client side.
-    // This fixes: JPEG compatibility, body size limit (resize), VLM format issues.
+    const jur = jurisdiction === 'CUSTOM' ? (customJurisdiction || 'CZECH') : jurisdiction
     const dataUrl = await fileToPngDataUrl(uploadedFile)
     void startAnalysis(
-      JSON.stringify({ image_base64: dataUrl.split(',')[1], jurisdiction }),
+      JSON.stringify({ image_base64: dataUrl.split(',')[1], jurisdiction: jur }),
       previewUrl || dataUrl,
     )
   }
 
   const handleTryDemo = () => {
+    const jur = jurisdiction === 'CUSTOM' ? (customJurisdiction || 'CZECH') : jurisdiction
     void startAnalysis(
-      JSON.stringify({ image_url: MOCK_IMAGE_URL, jurisdiction }),
+      JSON.stringify({ image_url: MOCK_IMAGE_URL, jurisdiction: jur }),
       MOCK_IMAGE_URL,
     )
   }
@@ -346,16 +347,16 @@ export default function Home() {
                 </span>
                 <div className="flex flex-wrap gap-1.5">
                   {[
-                    { code: 'CZECH', label: '🇨🇿 Czech', query: 'Czech Republic vyhláška zákon' },
-                    { code: 'USA', label: '🇺🇸 USA (OSHA)', query: 'OSHA 29 CFR 1910' },
-                    { code: 'JAPAN', label: '🇯🇵 Japan', query: 'Japan 消防法' },
-                    { code: 'EU', label: '🇪🇺 EU', query: 'EU directive' },
-                    { code: 'UK', label: '🇬🇧 UK (HSE)', query: 'UK HSE' },
-                    { code: 'INTERNATIONAL', label: '🌍 ISO', query: 'ISO standard' },
+                    { code: 'CZECH', label: '🇨🇿 Czech' },
+                    { code: 'USA', label: '🇺🇸 USA (OSHA)' },
+                    { code: 'JAPAN', label: '🇯🇵 Japan' },
+                    { code: 'EU', label: '🇪🇺 EU' },
+                    { code: 'UK', label: '🇬🇧 UK (HSE)' },
+                    { code: 'INTERNATIONAL', label: '🌍 ISO' },
                   ].map((j) => (
                     <button
                       key={j.code}
-                      onClick={() => setJurisdiction(j.code)}
+                      onClick={() => { setJurisdiction(j.code); setCustomJurisdiction('') }}
                       className={`rounded-lg border px-2.5 py-1 font-mono text-[11px] transition-all ${
                         jurisdiction === j.code
                           ? 'border-lime-500/60 bg-lime-500/15 text-lime-400'
@@ -365,10 +366,41 @@ export default function Home() {
                       {j.label}
                     </button>
                   ))}
+                  {/* Custom jurisdiction button */}
+                  <button
+                    onClick={() => setJurisdiction('CUSTOM')}
+                    className={`rounded-lg border px-2.5 py-1 font-mono text-[11px] transition-all ${
+                      jurisdiction === 'CUSTOM'
+                        ? 'border-lime-500/60 bg-lime-500/15 text-lime-400'
+                        : 'border-border/40 bg-card/30 text-muted-foreground hover:border-lime-500/30 hover:text-foreground'
+                    }`}
+                  >
+                    ✏️ Custom
+                  </button>
                 </div>
               </div>
+
+              {/* Custom jurisdiction text input — shown when "Custom" is selected */}
+              {jurisdiction === 'CUSTOM' && (
+                <div className="mt-3 flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={customJurisdiction}
+                    onChange={(e) => setCustomJurisdiction(e.target.value)}
+                    placeholder="e.g. Norway, Germany, Australia, Brazil..."
+                    className="flex-1 rounded-lg border border-border/40 bg-background/50 px-3 py-1.5 text-sm outline-none focus:border-lime-500/30"
+                  />
+                  <span className="text-[10px] text-muted-foreground/70">
+                    Tavily will search this country&apos;s safety laws
+                  </span>
+                </div>
+              )}
+
               <p className="mt-2 text-[10px] text-muted-foreground/70">
                 Determines which country&apos;s safety regulations Tavily searches for — affects the citations in the report.
+                {jurisdiction === 'CUSTOM' && customJurisdiction && (
+                  <span className="text-lime-400"> → searching: {customJurisdiction}</span>
+                )}
               </p>
             </div>
 
@@ -414,9 +446,10 @@ export default function Home() {
                       onChange={async (e) => {
                         const file = e.target.files?.[0]
                         if (file) {
+                          const jur = jurisdiction === 'CUSTOM' ? (customJurisdiction || 'CZECH') : jurisdiction
                           const dataUrl = await fileToPngDataUrl(file)
                           void startAnalysis(
-                            JSON.stringify({ image_base64: dataUrl.split(',')[1], jurisdiction }),
+                            JSON.stringify({ image_base64: dataUrl.split(',')[1], jurisdiction: jur }),
                             dataUrl,
                           )
                         }

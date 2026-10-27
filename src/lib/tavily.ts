@@ -215,11 +215,22 @@ export function tavilyAvailable(): boolean {
 export async function searchRegulations(
   hazardCategory: string,
   hazardDescription?: string,
-  jurisdiction: Jurisdiction = 'CZECH',
+  jurisdiction: string = 'CZECH',
 ): Promise<TavilyResult[]> {
   // Build query from category + description + jurisdiction modifier
   const baseQuery = CATEGORY_QUERIES[hazardCategory] || CATEGORY_QUERIES.OTHER
-  const jurModifier = JURISDICTIONS[jurisdiction].modifier
+
+  // Check if jurisdiction is a predefined one or custom (e.g. "Norway")
+  const isPredefined = jurisdiction in JURISDICTIONS
+  const jurData = isPredefined
+    ? JURISDICTIONS[jurisdiction as Jurisdiction]
+    : null
+
+  // For custom jurisdictions, use the country name as the modifier
+  // (Tavily will search broadly for that country's safety laws)
+  const jurModifier = jurData?.modifier || `${jurisdiction} safety regulation law`
+  const includeDomains = jurData?.domains || undefined // no domain restriction for custom
+
   const query = hazardDescription
     ? `${baseQuery} ${jurModifier} — ${hazardDescription.slice(0, 100)}`
     : `${baseQuery} ${jurModifier}`
@@ -229,9 +240,8 @@ export async function searchRegulations(
     return MOCK_REGULATIONS[hazardCategory] || MOCK_REGULATIONS.OTHER
   }
 
-  // Real Tavily API call — use include_domains to restrict search to official
-  // legal databases for the selected jurisdiction (zakonyprolidi.cz for CZ,
-  // osha.gov for US, elaws.e-gov.go.jp for Japan, etc.)
+  // Real Tavily API call — use include_domains for predefined jurisdictions,
+  // no domain restriction for custom (broader search)
   try {
     const response = await fetch('https://api.tavily.com/search', {
       method: 'POST',
@@ -242,7 +252,7 @@ export async function searchRegulations(
         search_depth: 'basic',
         max_results: 3,
         include_answer: false,
-        include_domains: JURISDICTIONS[jurisdiction].domains,
+        ...(includeDomains ? { include_domains: includeDomains } : {}),
       }),
     })
 
@@ -270,7 +280,7 @@ export async function searchRegulations(
  */
 export async function searchAllRegulations(
   hazards: Array<{ category: string; description: string }>,
-  jurisdiction: Jurisdiction = 'CZECH',
+  jurisdiction: string = 'CZECH',
 ): Promise<RegulationCitation[]> {
   // Deduplicate by category
   const seen = new Set<string>()
