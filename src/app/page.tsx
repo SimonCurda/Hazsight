@@ -503,10 +503,9 @@ export default function Home() {
                   />
                 </label>
               </div>
-                <p className="text-[10px] text-muted-foreground/50">
-                  Upload any photo from your device — it will be analyzed with real AI.
-                </p>
-              </div>
+              <p className="mt-2 text-[10px] text-muted-foreground/50">
+                Upload any photo — it will be analyzed with real AI via Nebius Token Factory.
+              </p>
             </div>
           </section>
         )}
