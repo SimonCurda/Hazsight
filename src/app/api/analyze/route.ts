@@ -139,10 +139,38 @@ async function runAnalysis(
         if (match) jsonStr = match[0]
       }
       const obj = JSON.parse(jsonStr)
+
+      // Generate approximate bounding box from affected_area text.
+      // VLMs often don't return bounding boxes — we infer position from
+      // phrases like "bottom-right near door", "center-left", etc.
+      function boxFromArea(area: string): { x: number; y: number; width: number; height: number } {
+        const a = (area || '').toLowerCase()
+        let x = 35, y = 35, w = 25, h = 25 // default center
+        if (a.includes('top-left') || a.includes('upper-left')) { x = 5; y = 5; }
+        else if (a.includes('top-right') || a.includes('upper-right')) { x = 65; y = 5; }
+        else if (a.includes('bottom-left') || a.includes('lower-left')) { x = 5; y = 65; }
+        else if (a.includes('bottom-right') || a.includes('lower-right')) { x = 65; y = 65; }
+        else if (a.includes('top') || a.includes('upper')) { y = 5; }
+        else if (a.includes('bottom') || a.includes('lower') || a.includes('floor')) { y = 70; }
+        else if (a.includes('left')) { x = 5; }
+        else if (a.includes('right')) { x = 65; }
+        else if (a.includes('center')) { x = 35; y = 35; }
+        if (a.includes('door') || a.includes('exit')) { x = 65; y = 50; w = 25; h = 35; }
+        if (a.includes('heater') || a.includes('heat') || a.includes('welding') || a.includes('spark')) { x = 15; y = 55; w = 25; h = 30; }
+        if (a.includes('cable') || a.includes('cord') || a.includes('wire')) { x = 25; y = 75; w = 40; h = 12; }
+        if (a.includes('shelf') || a.includes('rack') || a.includes('storage')) { x = 55; y = 10; w = 30; h = 35; }
+        return { x, y, width: w, height: h }
+      }
+
       // Normalize bounding boxes: VLMs sometimes return 0-1 decimals instead
       // of 0-100 percentages. If ALL values are < 1, multiply by 100.
-      function normalizeBox(box: { x: number; y: number; width: number; height: number }) {
-        if (!box) return { x: 0, y: 0, width: 0, height: 0 }
+      function normalizeBox(box: { x: number; y: number; width: number; height: number } | undefined, area: string) {
+        if (!box || (box.width === 0 && box.height === 0 && box.x === 0 && box.y === 0)) {
+          // VLM didn't return a bounding box — generate from affected_area text
+          const generated = boxFromArea(area)
+          console.log('[analyze] generated bounding box from area:', area, '→', generated)
+          return generated
+        }
         const vals = [box.x, box.y, box.width, box.height]
         const allSmall = vals.every(v => typeof v === 'number' && v >= 0 && v <= 1)
         if (allSmall && (box.x > 0 || box.y > 0 || box.width > 0 || box.height > 0)) {
@@ -151,8 +179,12 @@ async function runAnalysis(
         return box
       }
       // Also normalize fire_origin_point
-      function normalizePoint(pt: { x: number; y: number } | undefined) {
-        if (!pt) return undefined
+      function normalizePoint(pt: { x: number; y: number } | undefined, area: string) {
+        if (!pt || (pt.x === 0 && pt.y === 0)) {
+          // Generate from area
+          const box = boxFromArea(area)
+          return { x: box.x + box.width / 2, y: box.y + box.height / 2 }
+        }
         if (pt.x >= 0 && pt.x <= 1 && pt.y >= 0 && pt.y <= 1) {
           return { x: pt.x * 100, y: pt.y * 100 }
         }
@@ -169,9 +201,9 @@ async function runAnalysis(
             affected_area: h.affected_area || '',
             recommendation: h.recommendation || '',
             confidence: typeof h.confidence === 'number' ? h.confidence : 0.8,
-            bounding_box: normalizeBox(h.bounding_box || { x: 0, y: 0, width: 0, height: 0 }),
+            bounding_box: normalizeBox(h.bounding_box, h.affected_area || ''),
             // Fire-specific fields (only present for FIRE_SMOKE hazards)
-            ...(h.fire_origin_point ? { fire_origin_point: normalizePoint(h.fire_origin_point) } : {}),
+            ...(h.fire_origin_point || h.category === 'FIRE_SMOKE' ? { fire_origin_point: normalizePoint(h.fire_origin_point, h.affected_area || '') } : {}),
             ...(h.fire_severity_level ? { fire_severity_level: h.fire_severity_level as 'smoldering' | 'active' | 'spreading' | 'extinguished' } : {}),
             ...(h.fire_detected_at ? { fire_detected_at: h.fire_detected_at } : {}),
           }),

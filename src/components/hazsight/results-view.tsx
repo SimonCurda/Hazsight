@@ -17,6 +17,7 @@ import { RiskList } from './risk-list'
 import { TraceTimeline } from './trace-timeline'
 import { SEVERITY_ORDER } from './risk-list'
 import { HAZARD_CATEGORY_LABELS } from '@/lib/types'
+import { ChatPanel } from './chat-panel'
 import type { JobResult, TraceEvent } from '@/lib/mock-data'
 
 interface ResultsViewProps {
@@ -389,6 +390,12 @@ export function ResultsView({ result, events, onReset }: ResultsViewProps) {
           </CollapsibleContent>
         </Collapsible>
       )}
+
+      {/* Chat panel — ask questions about the scene + search laws via Tavily */}
+      <ChatPanel
+        result={result}
+        jurisdiction={result.regulations?.[0]?.jurisdiction || 'CZECH'}
+      />
     </motion.div>
   )
 }

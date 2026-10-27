@@ -384,8 +384,35 @@ export default function Home() {
                 Try with a demo image
               </Button>
               <p className="mt-2 text-xs text-muted-foreground">
-                See the full flow with a sample warehouse photo — no upload needed.
+                Runs real VLM analysis via Nebius Token Factory — no upload needed.
               </p>
+              {/* Upload your own demo images */}
+              <div className="mt-4 flex flex-col items-center gap-2">
+                <p className="text-[10px] text-muted-foreground/60">Or add your own demo images:</p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  <label className="cursor-pointer rounded-lg border border-border/40 bg-card/30 px-3 py-1.5 text-xs text-muted-foreground transition-all hover:border-lime-500/30 hover:text-lime-400">
+                    + Add image
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          const dataUrl = await fileToPngDataUrl(file)
+                          void startAnalysis(
+                            JSON.stringify({ image_base64: dataUrl.split(',')[1], jurisdiction }),
+                            dataUrl,
+                          )
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+                <p className="text-[10px] text-muted-foreground/50">
+                  Upload any photo from your device — it will be analyzed with real AI.
+                </p>
+              </div>
             </div>
           </section>
         )}

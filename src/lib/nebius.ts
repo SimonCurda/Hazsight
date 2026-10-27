@@ -11,7 +11,7 @@
 
 import OpenAI from 'openai'
 
-function getNebiusClient(): OpenAI | null {
+export function getNebiusClient(): OpenAI | null {
   const apiKey = process.env.NEBIUS_API_KEY
   if (!apiKey) {
     return null

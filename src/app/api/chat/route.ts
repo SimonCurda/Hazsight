@@ -1,0 +1,135 @@
+/**
+ * POST /api/chat
+ *
+ * Chat with Nemotron about the analyzed scene + safety regulations.
+ * Uses Nemotron 3 Super (fast model) for responsive conversation.
+ * Context: the analysis result (hazards, scene description, score).
+ * Can also search Tavily for specific law/regulation questions.
+ */
+
+import { NextRequest, NextResponse } from 'next/server'
+import { nebiusAvailable, NEBIUS_FAST_MODEL, getNebiusClient } from '@/lib/nebius'
+import { tavilyAvailable, searchRegulations, type Jurisdiction } from '@/lib/tavily'
+
+export const runtime = 'nodejs'
+export const maxDuration = 30
+
+interface ChatMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+interface ChatRequestBody {
+  message: string
+  history?: ChatMessage[]
+  context?: {
+    sceneDescription?: string
+    hazards?: Array<{
+      category: string
+      severity: string
+      description: string
+      affected_area: string
+      recommendation: string
+      confidence: number
+    }>
+    safetyScore?: number
+    regulations?: Array<{
+      hazard_category: string
+      jurisdiction: string
+      results: Array<{ title: string; url: string; content: string }>
+    }>
+  }
+  jurisdiction?: string
+}
+
+export async function POST(req: NextRequest): Promise<NextResponse> {
+  const body: ChatRequestBody = await req.json().catch(() => ({}))
+  const { message, history = [], context, jurisdiction = 'CZECH' } = body
+
+  if (!message) {
+    return NextResponse.json({ error: 'No message provided' }, { status: 400 })
+  }
+
+  if (!nebiusAvailable()) {
+    return NextResponse.json({
+      reply: 'I need a Nebius API key to answer questions. Please set NEBIUS_API_KEY.',
+    })
+  }
+
+  // Build system prompt with analysis context
+  const hazardsSummary = context?.hazards?.map((h, i) =>
+    `${i + 1}. ${h.category} (${h.severity}): ${h.description} — ${h.affected_area} — ${h.recommendation} (${Math.round(h.confidence * 100)}% confidence)`
+  ).join('\n') || 'No hazards data available.'
+
+  const regulationsSummary = context?.regulations?.map(r =>
+    `${r.hazard_category}: ${r.results.map(res => res.title).join(', ')}`
+  ).join('\n') || 'No regulations data available.'
+
+  const systemPrompt = `You are Hazsight AI, a workplace safety assistant. You help users understand safety hazards in their analyzed photos.
+
+SCENE ANALYSIS CONTEXT:
+- Scene: ${context?.sceneDescription || 'No scene description available.'}
+- Safety Score: ${context?.safetyScore || '?'}/100
+- Detected Hazards:
+${hazardsSummary}
+- Regulation Citations Found:
+${regulationsSummary}
+
+You can:
+1. Answer questions about the hazards detected in this specific scene
+2. Explain safety recommendations
+3. Discuss the safety score and what it means
+4. If asked about specific laws/regulations, mention what was already found via Tavily
+
+Be concise, helpful, and reference specific hazards from the analysis when relevant. Use simple language.`
+
+  try {
+    // Check if the user is asking about laws/regulations — if so, search Tavily
+    const lawKeywords = ['law', 'regulation', 'vyhláška', 'zákon', 'legal', 'compliance', 'requirement', 'standard', 'osha', 'iso', 'directive']
+    const isLawQuestion = lawKeywords.some(kw => message.toLowerCase().includes(kw))
+
+    let tavilyContext = ''
+    if (isLawQuestion && tavilyAvailable()) {
+      // Search Tavily for the user's question
+      const results = await searchRegulations(
+        'OTHER',
+        message.slice(0, 200),
+        jurisdiction as Jurisdiction,
+      )
+      if (results.length > 0) {
+        tavilyContext = '\n\nAdditional regulation search results:\n' +
+          results.map(r => `- ${r.title} (${r.url})\n  ${r.content?.slice(0, 200)}`).join('\n')
+      }
+    }
+
+    const client = getNebiusClient()
+    if (!client) {
+      return NextResponse.json({ reply: 'Nebius API key not configured.' })
+    }
+
+    const response = await client.chat.completions.create({
+      model: NEBIUS_FAST_MODEL,
+      messages: [
+        { role: 'system', content: systemPrompt + tavilyContext },
+        ...history.map(h => ({ role: h.role, content: h.content })),
+        { role: 'user', content: message },
+      ],
+      max_tokens: 1000,
+      temperature: 0.3,
+    })
+
+    const reply = response.choices[0]?.message?.content || 'I could not generate a response.'
+
+    return NextResponse.json({
+      reply,
+      tavily_searched: isLawQuestion && tavilyAvailable(),
+      tavily_results: isLawQuestion && tavilyAvailable() ? tavilyContext.length > 0 : false,
+    })
+  } catch (err) {
+    console.error('[chat] error:', err)
+    return NextResponse.json({
+      reply: 'Sorry, I encountered an error. Please try again.',
+      error: err instanceof Error ? err.message : String(err),
+    }, { status: 500 })
+  }
+}
