@@ -101,6 +101,7 @@ export function ResultsView({ result, events, onReset }: ResultsViewProps) {
         : { label: 'LOW RISK', color: 'text-emerald-600 dark:text-emerald-400' }
 
   return (
+    <>
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
@@ -391,11 +392,12 @@ export function ResultsView({ result, events, onReset }: ResultsViewProps) {
         </Collapsible>
       )}
 
-      {/* Chat panel — ask questions about the scene + search laws via Tavily */}
-      <ChatPanel
-        result={result}
-        jurisdiction={result.regulations?.[0]?.jurisdiction || 'CZECH'}
-      />
+      {/* Chat panel — moved OUTSIDE motion.div so position:fixed works */}
     </motion.div>
+    <ChatPanel
+      result={result}
+      jurisdiction={result.regulations?.[0]?.jurisdiction || 'CZECH'}
+    />
+    </>
   )
 }

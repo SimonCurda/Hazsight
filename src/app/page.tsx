@@ -32,6 +32,7 @@ import {
   type TraceEvent,
   type JobResult,
 } from '@/lib/mock-data'
+import { SEED_RESULTS, SEED_EVENTS } from '@/lib/seed-data'
 
 /**
  * Convert any image file to a PNG data URL, resizing if too large.
@@ -239,6 +240,16 @@ export default function Home() {
       JSON.stringify({ image_url: MOCK_IMAGE_URL, jurisdiction: jur }),
       MOCK_IMAGE_URL,
     )
+  }
+
+  // Load pre-saved results without calling the API (saves credits)
+  // Lets users test chatbot, PDF, heatmap etc. without spending Nebius/Tavily credits
+  const handleLoadSeed = () => {
+    setPreviewUrl(SEED_RESULTS.image_url)
+    setEvents(SEED_EVENTS)
+    setResult(SEED_RESULTS)
+    setIsLive(false)
+    setView('results')
   }
 
   const handleReset = () => {
@@ -466,8 +477,17 @@ export default function Home() {
                 <Sparkles className="h-4 w-4 text-lime-500" />
                 Try with a demo image
               </Button>
+              <Button
+                variant="ghost"
+                size="lg"
+                className="gap-2 text-muted-foreground"
+                onClick={handleLoadSeed}
+              >
+                <Brain className="h-4 w-4" />
+                Load saved results
+              </Button>
               <p className="mt-2 text-xs text-muted-foreground">
-                Runs real VLM analysis via Nebius Token Factory — no upload needed.
+                "Demo image" runs real AI · "Saved results" loads pre-built analysis (no credits used)
               </p>
               {/* Upload your own demo images */}
               <div className="mt-4 flex flex-col items-center gap-2">
