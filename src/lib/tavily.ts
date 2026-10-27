@@ -294,9 +294,14 @@ export async function searchAllRegulations(
 
   for (const hazard of uniqueCategories) {
     const results = await searchRegulations(hazard.category, hazard.description, jurisdiction)
+    // Safe modifier access — handle custom jurisdictions (e.g. "Norway")
+    const isPredefined = jurisdiction in JURISDICTIONS
+    const jurModifier = isPredefined
+      ? JURISDICTIONS[jurisdiction as Jurisdiction].modifier
+      : `${jurisdiction} safety regulation law`
     citations.push({
       hazard_category: hazard.category,
-      query: `${CATEGORY_QUERIES[hazard.category] || CATEGORY_QUERIES.OTHER} ${JURISDICTIONS[jurisdiction].modifier}`,
+      query: `${CATEGORY_QUERIES[hazard.category] || CATEGORY_QUERIES.OTHER} ${jurModifier}`,
       jurisdiction,
       results,
     })

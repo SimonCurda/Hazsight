@@ -340,7 +340,7 @@ export default function Home() {
             </div>
 
             {/* Jurisdiction selector — determines which country's laws Tavily searches */}
-            <div className="hazsight-glass mb-6 rounded-xl border border-border/40 bg-card/50 p-4">
+            <div className="hazsight-glass mb-6 rounded-xl border border-border/40 bg-card/80 p-4 shadow-lg shadow-black/20">
               <div className="flex flex-wrap items-center gap-3">
                 <span className="hazsight-readout text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {'// Jurisdiction:'}
