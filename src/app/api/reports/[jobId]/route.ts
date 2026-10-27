@@ -69,11 +69,11 @@ export async function GET(
       imageData,
       jobId: job.id,
       createdAt: job.createdAt,
-    })
+    }) as any
 
     const pdfBuffer = await renderToBuffer(pdfElement)
 
-    return new Response(pdfBuffer, {
+    return new Response(pdfBuffer as BodyInit, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': 'attachment; filename="hazsight-safety-audit.pdf"',

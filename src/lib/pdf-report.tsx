@@ -326,7 +326,7 @@ export function PdfReport({
           {sortedHazards.map((hazard, idx) => (
             <View
               key={hazard.id || idx}
-              style={[styles.tableRow, idx % 2 === 1 && styles.tableRowAlt]}
+              style={[styles.tableRow, idx % 2 === 1 ? styles.tableRowAlt : undefined]}
             >
               <Text style={[styles.tableCell, { width: colWidths.category }]}>
                 {formatCategory(hazard.category)}

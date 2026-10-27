@@ -59,6 +59,7 @@ export interface JobResult {
   report_pdf_url: string | null
   regulations: RegulationCitation[]
   tavily_live: boolean
+  error?: string | null
   created_at: string
   completed_at: string | null
 }

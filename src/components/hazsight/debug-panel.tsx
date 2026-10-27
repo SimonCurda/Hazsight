@@ -83,8 +83,8 @@ export function DebugPanel() {
     return () => clearInterval(interval)
   }, [open, autoRefresh, fetchDebug])
 
-  const nebiusOk = data?.env?.NEBIUS_API_KEY_set
-  const tavilyOk = data?.env?.TAVILY_API_KEY_set
+  const nebiusOk = !!data?.env?.NEBIUS_API_KEY_set
+  const tavilyOk = !!data?.env?.TAVILY_API_KEY_set
 
   return (
     <>

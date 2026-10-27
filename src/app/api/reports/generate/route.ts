@@ -54,11 +54,11 @@ export async function POST(req: NextRequest): Promise<Response> {
       imageData: imageData || null,
       jobId: jobId || 'direct',
       createdAt: createdAt || new Date().toISOString(),
-    })
+    }) as any
 
     const pdfBuffer = await renderToBuffer(pdfElement)
 
-    return new Response(pdfBuffer, {
+    return new Response(pdfBuffer as BodyInit, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': 'attachment; filename="hazsight-safety-audit.pdf"',

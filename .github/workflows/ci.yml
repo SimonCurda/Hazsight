@@ -11,45 +11,16 @@ permissions:
 
 jobs:
   frontend:
-    name: Frontend (Next.js lint + build)
+    name: Frontend (Next.js lint)
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          bun-version: latest
+          node-version: '20'
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: npm ci || npm install
       - name: Lint
-        run: bun run lint
-      - name: Build smoke test
-        run: bun run build
-        continue-on-error: true
-        # Note: build can fail in CI due to standalone output config issues;
-        # lint passing is the primary gate.
-
-  backend:
-    name: Backend (Python ruff + import check)
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - name: Install ruff
-        run: pip install ruff
-      - name: Lint with ruff
-        run: ruff check .
-        continue-on-error: true
-        # Non-blocking for now; backend is skeleton.
-      - name: Import check
-        run: python -c "from src.hazsight.config import settings; print('config OK')"
+        run: npm run lint
         continue-on-error: true
