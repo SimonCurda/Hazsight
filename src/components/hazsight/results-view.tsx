@@ -218,9 +218,6 @@ export function ResultsView({ result, events, onReset }: ResultsViewProps) {
             onHazardClick={handleHazardClick}
             selectedHazardId={selectedHazardId}
           />
-          <p className="text-xs text-muted-foreground">
-            Click a hazard box to highlight it in the list below.
-          </p>
         </div>
         <RiskList
           hazards={result.hazards}

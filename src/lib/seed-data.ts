@@ -24,10 +24,7 @@ export const SEED_RESULTS: JobResult = {
       affected_area: 'Right side welding station and adjacent gas cylinder storage area',
       recommendation: 'Immediately clear all flammable materials and gas cylinders from the hot work zone, use a welding screen, and assign a dedicated fire watch.',
       confidence: 0.95,
-      bounding_box: { x: 60, y: 40, width: 30, height: 35 },
-      fire_origin_point: { x: 75, y: 55 },
-      fire_severity_level: 'active',
-      fire_detected_at: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+      bounding_box: { x: 0, y: 0, width: 0, height: 0 },
     },
     {
       id: 'h-2',
@@ -37,10 +34,7 @@ export const SEED_RESULTS: JobResult = {
       affected_area: 'Center floor area next to the white space heater',
       recommendation: 'Relocate all flammable liquids and aerosols to an approved storage cabinet away from heat sources and electrical equipment.',
       confidence: 0.95,
-      bounding_box: { x: 30, y: 55, width: 25, height: 25 },
-      fire_origin_point: { x: 42, y: 65 },
-      fire_severity_level: 'active',
-      fire_detected_at: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+      bounding_box: { x: 0, y: 0, width: 0, height: 0 },
     },
     {
       id: 'h-3',
@@ -50,7 +44,7 @@ export const SEED_RESULTS: JobResult = {
       affected_area: 'Floor space in the center and foreground of the room',
       recommendation: 'Secure extension cords to the floor or route them overhead to keep walkways clear and prevent tripping incidents.',
       confidence: 0.90,
-      bounding_box: { x: 25, y: 75, width: 45, height: 15 },
+      bounding_box: { x: 0, y: 0, width: 0, height: 0 },
     },
     {
       id: 'h-4',
@@ -60,7 +54,7 @@ export const SEED_RESULTS: JobResult = {
       affected_area: 'Left side of the room near the exit door and back wall',
       recommendation: 'Organize storage materials, clear the exit path, and stack items securely to prevent collapse or blockage of emergency exits.',
       confidence: 0.85,
-      bounding_box: { x: 5, y: 10, width: 30, height: 40 },
+      bounding_box: { x: 0, y: 0, width: 0, height: 0 },
     },
   ],
   regulations: [

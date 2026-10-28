@@ -55,6 +55,14 @@ export function AnnotatedImage({
         alt="Analyzed scene with detected hazards"
         className="block max-h-[600px] w-full object-contain"
       />
+      {/* Disclaimer for seed/demo results (no bounding boxes) */}
+      {visibleHazards.length === 0 && (
+        <div className="absolute inset-0 flex items-end justify-center bg-black/40 p-4">
+          <p className="rounded-lg bg-black/70 px-3 py-1.5 text-center font-mono text-[10px] text-muted-foreground backdrop-blur-sm">
+            {'// Illustrative analysis — hazard locations not marked on this image'}
+          </p>
+        </div>
+      )}
       {visibleHazards.map((hazard, idx) => {
         const colors = SEVERITY_COLORS[hazard.severity]
         const isSelected = selectedHazardId === hazard.id
