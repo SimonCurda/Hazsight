@@ -9,7 +9,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { nebiusAvailable, NEBIUS_FAST_MODEL, getNebiusClient } from '@/lib/nebius'
-import { tavilyAvailable, searchRegulations, type Jurisdiction } from '@/lib/tavily'
+import { tavilyAvailable, searchRegulations } from '@/lib/tavily'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -81,7 +81,9 @@ You can:
 3. Discuss the safety score and what it means
 4. If asked about specific laws/regulations, mention what was already found via Tavily
 
-Be concise, helpful, and reference specific hazards from the analysis when relevant. Use simple language.`
+Be concise, helpful, and reference specific hazards from the analysis when relevant. Use simple language.
+
+IMPORTANT: Do NOT show your reasoning process, thinking steps, or chain-of-thought. Do NOT write "Here's a thinking process" or numbered analysis steps. Just give the direct answer to the user's question as if you're a human safety expert talking to them.`
 
   try {
     // Check if the user is asking about laws/regulations — if so, search Tavily
@@ -90,11 +92,10 @@ Be concise, helpful, and reference specific hazards from the analysis when relev
 
     let tavilyContext = ''
     if (isLawQuestion && tavilyAvailable()) {
-      // Search Tavily for the user's question
       const results = await searchRegulations(
         'OTHER',
         message.slice(0, 200),
-        jurisdiction as Jurisdiction,
+        jurisdiction,
       )
       if (results.length > 0) {
         tavilyContext = '\n\nAdditional regulation search results:\n' +
@@ -118,7 +119,31 @@ Be concise, helpful, and reference specific hazards from the analysis when relev
       temperature: 0.3,
     })
 
-    const reply = response.choices[0]?.message?.content || 'I could not generate a response.'
+    let reply = response.choices[0]?.message?.content || 'I could not generate a response.'
+
+    // Strip thinking/reasoning that Nemotron models sometimes leak
+    // Remove <think>...</think> blocks
+    reply = reply.replace(/<think>[\s\S]*?<\/think>/gi, '').trim()
+    // Remove "Here's a thinking process:" preamble
+    const thinkingIdx = reply.toLowerCase().indexOf("here's a thinking process")
+    if (thinkingIdx >= 0) {
+      // Find where the actual answer starts (after the reasoning)
+      const afterThinking = reply.slice(thinkingIdx)
+      // Look for a double newline after the reasoning section
+      const answerMatch = afterThinking.match(/\n\n([A-Z][\s\S]+)/)
+      if (answerMatch) {
+        reply = answerMatch[1].trim()
+      }
+    }
+    // Remove numbered reasoning steps (1. Analyze... 2. Identify... etc.)
+    reply = reply.replace(/^(\d+\.\s+(Analyze|Identify|Check|Determine|Formulate|Review|Let|Important|Based|I need|I should|I can|Step)\b[\s\S]*?)(?=\n\n[A-Z]|\n\nBased|\n\nAccording|\n\nThe |\n\nHere|\n\nFrom)/m, '').trim()
+    // If reply still starts with reasoning, try to find the actual answer
+    if (reply.match(/^\d+\.\s/) || reply.toLowerCase().startsWith('here\'s') || reply.toLowerCase().startsWith('let me')) {
+      const lines = reply.split('\n\n')
+      // Find first line that looks like an actual answer (not a step)
+      const answerLine = lines.find(l => !l.match(/^\d+\./) && !l.toLowerCase().startsWith('here\'s') && !l.toLowerCase().startsWith('let me') && l.length > 20)
+      if (answerLine) reply = answerLine.trim()
+    }
 
     return NextResponse.json({
       reply,
