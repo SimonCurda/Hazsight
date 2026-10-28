@@ -71,6 +71,7 @@ For EACH hazard, provide:
 FIRE DETECTION (for FIRE_SMOKE hazards only):
 - fire_origin_point: { x, y } as percentages 0-100
 - fire_severity_level: "smoldering", "active", "spreading", or "extinguished"
+- fire_cause: your assessment of what likely caused the fire. Be specific — reference what you see. Examples: "Sparks from welding ignited nearby cardboard", "Space heater near gasoline cans", "Electrical fault in overloaded outlet"
 - fire_detected_at: null
 
 Also provide:
@@ -93,6 +94,7 @@ IMPORTANT: Return ONLY valid JSON. Do NOT use newlines inside string values. Kee
       "bounding_box": { "x": 18, "y": 60, "width": 22, "height": 28 },
       "fire_origin_point": { "x": 28, "y": 70 },
       "fire_severity_level": "active",
+      "fire_cause": "Sparks from welding operation ignited nearby cardboard boxes",
       "fire_detected_at": null
     }
   ]

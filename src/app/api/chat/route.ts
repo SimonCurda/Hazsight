@@ -61,6 +61,20 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     `${i + 1}. ${h.category} (${h.severity}): ${h.description} — ${h.affected_area} — ${h.recommendation} (${Math.round(h.confidence * 100)}% confidence)`
   ).join('\n') || 'No hazards data available.'
 
+  // Extract fire-specific data for the chatbot context
+  const fireHazards = context?.hazards?.filter(h => h.category === 'FIRE_SMOKE') || []
+  const fireSummary = fireHazards.length > 0
+    ? fireHazards.map((h, i) =>
+        `Fire ${i + 1}:\n` +
+        `- Severity: ${h.severity}\n` +
+        `- Status: ${(h as any).fire_severity_level || 'unknown'}\n` +
+        `- Origin point: ${(h as any).fire_origin_point ? `x=${(h as any).fire_origin_point.x}%, y=${(h as any).fire_origin_point.y}%` : 'not pinpointed'}\n` +
+        `- Likely cause: ${(h as any).fire_cause || 'cause not determined — infer from the scene description and affected_area'}\n` +
+        `- What's burning: ${h.description}\n` +
+        `- Location: ${h.affected_area}`
+      ).join('\n\n')
+    : 'No fire hazards detected in this scene.'
+
   const regulationsSummary = context?.regulations?.map(r =>
     `${r.hazard_category}: ${r.results.map(res => res.title).join(', ')}`
   ).join('\n') || 'No regulations data available.'
@@ -70,16 +84,22 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 SCENE ANALYSIS CONTEXT:
 - Scene: ${context?.sceneDescription || 'No scene description available.'}
 - Safety Score: ${context?.safetyScore || '?'}/100
-- Detected Hazards:
+
+FIRE ANALYSIS (if fire was detected):
+${fireSummary}
+
+DETECTED HAZARDS:
 ${hazardsSummary}
-- Regulation Citations Found:
+
+REGULATION CITATIONS FOUND:
 ${regulationsSummary}
 
 You can:
 1. Answer questions about the hazards detected in this specific scene
 2. Explain safety recommendations
 3. Discuss the safety score and what it means
-4. If asked about specific laws/regulations, mention what was already found via Tavily
+4. If asked about fire origin or cause, use the FIRE ANALYSIS section above — mention the origin point coordinates, severity level, and likely cause
+5. If asked about specific laws/regulations, mention what was already found via Tavily
 
 Be concise, helpful, and reference specific hazards from the analysis when relevant. Use simple language.
 

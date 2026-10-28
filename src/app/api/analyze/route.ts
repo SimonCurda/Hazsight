@@ -193,7 +193,7 @@ async function runAnalysis(
       parsed = {
         sceneDescription: obj.scene_description || '',
         hazards: (obj.hazards || []).map(
-          (h: DetectedHazard & { bounding_box?: { x: number; y: number; width: number; height: number }; fire_origin_point?: { x: number; y: number }; fire_severity_level?: string; fire_detected_at?: string | null }, idx: number) => ({
+          (h: DetectedHazard & { bounding_box?: { x: number; y: number; width: number; height: number }; fire_origin_point?: { x: number; y: number }; fire_severity_level?: string; fire_detected_at?: string | null; fire_cause?: string }, idx: number) => ({
             id: `h-${idx + 1}`,
             category: h.category,
             severity: h.severity,
@@ -205,6 +205,7 @@ async function runAnalysis(
             // Fire-specific fields (only present for FIRE_SMOKE hazards)
             ...(h.fire_origin_point || h.category === 'FIRE_SMOKE' ? { fire_origin_point: normalizePoint(h.fire_origin_point, h.affected_area || '') } : {}),
             ...(h.fire_severity_level ? { fire_severity_level: h.fire_severity_level as 'smoldering' | 'active' | 'spreading' | 'extinguished' } : {}),
+            ...(h.fire_cause ? { fire_cause: h.fire_cause } : {}),
             ...(h.fire_detected_at ? { fire_detected_at: h.fire_detected_at } : {}),
           }),
         ),

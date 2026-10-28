@@ -25,6 +25,10 @@ export const SEED_RESULTS: JobResult = {
       recommendation: 'Immediately clear all flammable materials and gas cylinders from the hot work zone, use a welding screen, and assign a dedicated fire watch.',
       confidence: 0.95,
       bounding_box: { x: 0, y: 0, width: 0, height: 0 },
+      fire_origin_point: { x: 75, y: 55 },
+      fire_severity_level: 'active',
+      fire_cause: 'Sparks from welding operation near compressed gas cylinders and red fuel containers — ignition risk from hot work without proper clearance',
+      fire_detected_at: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
     },
     {
       id: 'h-2',
@@ -35,6 +39,10 @@ export const SEED_RESULTS: JobResult = {
       recommendation: 'Relocate all flammable liquids and aerosols to an approved storage cabinet away from heat sources and electrical equipment.',
       confidence: 0.95,
       bounding_box: { x: 0, y: 0, width: 0, height: 0 },
+      fire_origin_point: { x: 42, y: 65 },
+      fire_severity_level: 'active',
+      fire_cause: 'Gasoline cans and aerosols stored directly next to electric space heater — potential ignition from heater malfunction or tip-over',
+      fire_detected_at: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
     },
     {
       id: 'h-3',

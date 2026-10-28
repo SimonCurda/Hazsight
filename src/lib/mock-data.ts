@@ -32,6 +32,7 @@ export interface DetectedHazard {
   fire_origin_point?: { x: number; y: number } // where fire appears to originate (0-100)
   fire_severity_level?: 'smoldering' | 'active' | 'spreading' | 'extinguished'
   fire_detected_at?: string // ISO timestamp when fire was first detected
+  fire_cause?: string // AI assessment of what likely caused the fire
 }
 
 export interface TraceEvent {
