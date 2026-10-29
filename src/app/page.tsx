@@ -69,18 +69,73 @@ async function fileToPngDataUrl(file: File, maxSize: number = 1920): Promise<str
 type View = 'landing' | 'uploading' | 'processing' | 'results' | 'monitoring' | 'error'
 
 export default function Home() {
-  const [view, setView] = React.useState<View>('landing')
-  const [previewUrl, setPreviewUrl] = React.useState<string | null>(null)
-  const [events, setEvents] = React.useState<TraceEvent[]>([])
-  const [result, setResult] = React.useState<JobResult | null>(null)
+  // Restore last session from localStorage on mount (survives refresh/close)
+  const [view, setView] = React.useState<View>(() => {
+    if (typeof window === 'undefined') return 'landing'
+    try {
+      const saved = localStorage.getItem('hazsight_view')
+      const savedResult = localStorage.getItem('hazsight_result')
+      if (saved === 'results' && savedResult) return 'results'
+    } catch {}
+    return 'landing'
+  })
+  const [previewUrl, setPreviewUrl] = React.useState<string | null>(() => {
+    if (typeof window === 'undefined') return null
+    try { return localStorage.getItem('hazsight_preview') } catch { return null }
+  })
+  const [events, setEvents] = React.useState<TraceEvent[]>(() => {
+    if (typeof window === 'undefined') return []
+    try {
+      const saved = localStorage.getItem('hazsight_events')
+      return saved ? JSON.parse(saved) : []
+    } catch { return [] }
+  })
+  const [result, setResult] = React.useState<JobResult | null>(() => {
+    if (typeof window === 'undefined') return null
+    try {
+      const saved = localStorage.getItem('hazsight_result')
+      return saved ? JSON.parse(saved) : null
+    } catch { return null }
+  })
   const [jobId, setJobId] = React.useState<string | null>(null)
   const [uploadedFile, setUploadedFile] = React.useState<File | null>(null)
   const [isLive, setIsLive] = React.useState(false)
   const [isPosting, setIsPosting] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
-  const [jurisdiction, setJurisdiction] = React.useState<string>('CZECH')
+  const [jurisdiction, setJurisdiction] = React.useState<string>(() => {
+    if (typeof window === 'undefined') return 'CZECH'
+    try { return localStorage.getItem('hazsight_jurisdiction') || 'CZECH' } catch { return 'CZECH' }
+  })
   const [customJurisdiction, setCustomJurisdiction] = React.useState('')
   const [copied, setCopied] = React.useState(false)
+
+  // Persist view + result + events to localStorage
+  React.useEffect(() => {
+    try { localStorage.setItem('hazsight_view', view) } catch {}
+  }, [view])
+
+  React.useEffect(() => {
+    try {
+      if (result) localStorage.setItem('hazsight_result', JSON.stringify(result))
+      else localStorage.removeItem('hazsight_result')
+    } catch {}
+  }, [result])
+
+  React.useEffect(() => {
+    try {
+      if (events.length > 0) localStorage.setItem('hazsight_events', JSON.stringify(events))
+    } catch {}
+  }, [events])
+
+  React.useEffect(() => {
+    try {
+      if (previewUrl) localStorage.setItem('hazsight_preview', previewUrl)
+    } catch {}
+  }, [previewUrl])
+
+  React.useEffect(() => {
+    try { localStorage.setItem('hazsight_jurisdiction', jurisdiction) } catch {}
+  }, [jurisdiction])
 
   // Poll for trace events + job status while processing.
   React.useEffect(() => {
@@ -281,43 +336,42 @@ export default function Home() {
     <div className="min-h-screen flex flex-col">
       {/* Sticky header — terminal style */}
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-        <div className="container mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-          <div className="flex items-center gap-2">
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-3 sm:px-4">
+          <div className="flex items-center gap-1 sm:gap-2 min-w-0">
             {view !== 'landing' && (
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={handleBackToHome}
                 aria-label="Back to home"
-                className="rounded hazsight-readout"
+                className="rounded hazsight-readout flex-shrink-0"
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             )}
             <AboutTeamCard onHomeClick={handleBackToHome} />
           </div>
-          <nav className="flex items-center gap-1">
+          <nav className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
             {view === 'landing' && (
               <>
-                <Button variant="ghost" size="sm" asChild className="text-xs sm:inline-flex">
+                <Button variant="ghost" size="sm" asChild className="text-xs hidden md:inline-flex">
                   <Link href="#how-it-works">Process</Link>
                 </Button>
-                <Button variant="ghost" size="sm" asChild className="text-xs sm:inline-flex">
+                <Button variant="ghost" size="sm" asChild className="text-xs hidden md:inline-flex">
                   <Link href="#hazards">Hazards</Link>
                 </Button>
               </>
             )}
-            {/* Monitoring dashboard — available from any view */}
             <Button
               variant={view === 'monitoring' ? 'default' : 'ghost'}
               size="sm"
-              className="gap-1.5 text-xs"
+              className="gap-1 text-xs"
               onClick={handleMonitoringClick}
             >
               <Activity className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Monitoring</span>
             </Button>
-            <Button variant="ghost" size="icon" asChild className="rounded">
+            <Button variant="ghost" size="icon" asChild className="rounded flex-shrink-0">
               <a
                 href="https://github.com/SimonCurda/Hazsight"
                 target="_blank"
@@ -338,7 +392,7 @@ export default function Home() {
         {view === 'landing' && <LandingView onUploadClick={handleUploadClick} />}
 
         {view === 'uploading' && (
-          <section className="container mx-auto max-w-3xl px-4 py-12">
+          <section className="mx-auto max-w-3xl px-4 py-12">
             <div className="mb-8 text-center">
               <h1 className="font-mono text-3xl font-bold tracking-tight">
                 Upload a photo for analysis
@@ -509,7 +563,7 @@ export default function Home() {
         )}
 
         {view === 'processing' && (
-          <section className="container mx-auto max-w-6xl px-4 py-12">
+          <section className="mx-auto max-w-6xl px-4 py-12">
             <div className="mb-8">
               <h1 className="font-mono text-3xl font-bold tracking-tight">
                 {isPosting ? 'Connecting to Nebius...' : 'Analyzing your photo'}
@@ -538,7 +592,7 @@ export default function Home() {
         )}
 
         {view === 'monitoring' && (
-          <section className="container mx-auto max-w-6xl px-4 py-12">
+          <section className="mx-auto max-w-6xl px-4 py-12">
             <MonitoringView
               onJobSelect={handleJobSelectFromMonitoring}
               onUploadClick={handleUploadClick}
@@ -547,7 +601,7 @@ export default function Home() {
         )}
 
         {view === 'error' && (
-          <section className="container mx-auto max-w-3xl px-4 py-12">
+          <section className="mx-auto max-w-3xl px-4 py-12">
             <Card className="border-red-500/30">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-red-500">
@@ -622,7 +676,7 @@ export default function Home() {
         )}
 
         {view === 'results' && result && (
-          <section className="container mx-auto max-w-6xl px-4 py-12">
+          <section className="mx-auto max-w-6xl px-4 py-12">
             <ResultsView result={result} events={events} onReset={handleReset} />
           </section>
         )}
@@ -631,7 +685,7 @@ export default function Home() {
       {/* Sticky footer — terminal style */}
       <footer className="mt-auto border-t border-border/40 bg-muted/20">
         <div className="absolute inset-0 -z-10 hazsight-grid-bg opacity-30" aria-hidden />
-        <div className="container mx-auto max-w-6xl px-4 py-10">
+        <div className="mx-auto max-w-6xl px-4 py-10">
           <div className="flex flex-col items-start justify-between gap-6 md:flex-row">
             <div className="max-w-md">
               <div className="mb-2 flex items-center gap-2">
