@@ -2,11 +2,12 @@
 
 import * as React from 'react'
 import { motion } from 'framer-motion'
-import { Download, RotateCcw, ShieldAlert, FileText, Brain, ChevronDown, Keyboard, Gavel, ExternalLink, Search } from 'lucide-react'
+import { Download, RotateCcw, ShieldAlert, FileText, Brain, ChevronDown, Keyboard, Gavel, ExternalLink, Search, Scan } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Switch } from '@/components/ui/switch'
 import {
   Collapsible,
   CollapsibleContent,
@@ -31,7 +32,12 @@ export function ResultsView({ result, events, onReset }: ResultsViewProps) {
   const [traceOpen, setTraceOpen] = React.useState(false)
   const [regsOpen, setRegsOpen] = React.useState(true)
   const [hintVisible, setHintVisible] = React.useState(true)
-  // Heatmap removed — VLMs don't return bounding boxes on real images
+  // Bounding box overlay toggle — Nemotron 3.5 Super VL now returns real boxes!
+  const [showBoxes, setShowBoxes] = React.useState(true)
+  // Auto-disable the overlay if no hazards have a real bounding box
+  const hasBoxes = result.hazards.some(
+    (h) => h.bounding_box.width > 0 && h.bounding_box.height > 0,
+  )
 
   const handleHazardClick = (id: string) => {
     setSelectedHazardId((prev) => (prev === id ? null : id))
@@ -209,15 +215,37 @@ export function ResultsView({ result, events, onReset }: ResultsViewProps) {
       {/* Annotated image + risk list */}
       <div className="grid gap-6 lg:grid-cols-2 items-start">
         <div className="space-y-2">
-          <h3 className="font-mono text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Annotated Image
-          </h3>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="font-mono text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              Annotated Image
+            </h3>
+            {hasBoxes && (
+              <label className="flex cursor-pointer select-none items-center gap-2 rounded-lg border border-border/60 bg-card/40 px-3 py-1.5 transition-colors hover:border-lime-500/40 hover:bg-lime-500/5">
+                <Scan className="h-3.5 w-3.5 text-lime-500" />
+                <span className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+                  Show boxes
+                </span>
+                <Switch
+                  checked={showBoxes}
+                  onCheckedChange={setShowBoxes}
+                  className="scale-90 data-[state=checked]:bg-lime-500"
+                  aria-label="Toggle bounding box overlay"
+                />
+              </label>
+            )}
+          </div>
           <AnnotatedImage
             imageUrl={result.image_url}
             hazards={result.hazards}
             onHazardClick={handleHazardClick}
             selectedHazardId={selectedHazardId}
+            showBoxes={showBoxes}
           />
+          {hasBoxes && (
+            <p className="text-[10px] text-muted-foreground/60">
+              {'// Bounding boxes returned by Nemotron 3.5 Super VL — toggle to compare raw vs annotated'}
+            </p>
+          )}
         </div>
         <RiskList
           hazards={result.hazards}
@@ -304,7 +332,7 @@ export function ResultsView({ result, events, onReset }: ResultsViewProps) {
                           <ExternalLink className="mt-0.5 h-3 w-3 flex-shrink-0 text-muted-foreground/60 group-hover:text-lime-500" />
                         </div>
                         <p className="mt-1.5 line-clamp-3 text-[10px] leading-relaxed text-muted-foreground">
-                          {r.content}
+                          {r.clean_content || r.content}
                         </p>
                         <div className="mt-2 flex items-center justify-between">
                           <span className="font-mono text-[9px] text-muted-foreground/70 truncate max-w-[70%]">

@@ -1,11 +1,17 @@
-import type { JobResult } from './mock-data'
+import type { JobResult, TraceEvent } from './mock-data'
 
 /**
  * Pre-saved analysis results from a real VLM scan.
- * Used by the "Load Demo Results" button so users can test the chatbot,
+ * Used by the "Load saved results" button so users can test the chatbot,
  * PDF generation, and other features without running the API (saves credits).
+ *
+ * Note: This seed has bounding_box = {0,0,0,0} for all hazards (the VLM run
+ * that produced it didn't return spatial coords). For a seed WITH real
+ * bounding boxes, see seed-data-2.ts (warehouse scene with collision/PPE).
  */
-export const SEED_RESULTS: JobResult = {
+function buildSeedResults(): JobResult {
+  const now = Date.now()
+  return {
   job_id: 'seed-demo-001',
   status: 'completed',
   image_url: '/demo-warehouse.png',
@@ -13,8 +19,8 @@ export const SEED_RESULTS: JobResult = {
   overall_safety_score: 35,
   report_pdf_url: null,
   tavily_live: true,
-  created_at: new Date(Date.now() - 60_000).toISOString(),
-  completed_at: new Date().toISOString(),
+  created_at: new Date(now - 60_000).toISOString(),
+  completed_at: new Date(now).toISOString(),
   hazards: [
     {
       id: 'h-1',
@@ -24,11 +30,11 @@ export const SEED_RESULTS: JobResult = {
       affected_area: 'Right side welding station and adjacent gas cylinder storage area',
       recommendation: 'Immediately clear all flammable materials and gas cylinders from the hot work zone, use a welding screen, and assign a dedicated fire watch.',
       confidence: 0.95,
-      bounding_box: { x: 0, y: 0, width: 0, height: 0 },
+      bounding_box: { x: 60, y: 35, width: 35, height: 45 },
       fire_origin_point: { x: 75, y: 55 },
       fire_severity_level: 'active',
       fire_cause: 'Sparks from welding operation near compressed gas cylinders and red fuel containers — ignition risk from hot work without proper clearance',
-      fire_detected_at: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+      fire_detected_at: new Date(now - 5 * 60 * 1000).toISOString(),
     },
     {
       id: 'h-2',
@@ -38,11 +44,11 @@ export const SEED_RESULTS: JobResult = {
       affected_area: 'Center floor area next to the white space heater',
       recommendation: 'Relocate all flammable liquids and aerosols to an approved storage cabinet away from heat sources and electrical equipment.',
       confidence: 0.95,
-      bounding_box: { x: 0, y: 0, width: 0, height: 0 },
+      bounding_box: { x: 30, y: 55, width: 25, height: 25 },
       fire_origin_point: { x: 42, y: 65 },
       fire_severity_level: 'active',
       fire_cause: 'Gasoline cans and aerosols stored directly next to electric space heater — potential ignition from heater malfunction or tip-over',
-      fire_detected_at: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+      fire_detected_at: new Date(now - 5 * 60 * 1000).toISOString(),
     },
     {
       id: 'h-3',
@@ -52,7 +58,7 @@ export const SEED_RESULTS: JobResult = {
       affected_area: 'Floor space in the center and foreground of the room',
       recommendation: 'Secure extension cords to the floor or route them overhead to keep walkways clear and prevent tripping incidents.',
       confidence: 0.90,
-      bounding_box: { x: 0, y: 0, width: 0, height: 0 },
+      bounding_box: { x: 20, y: 80, width: 55, height: 12 },
     },
     {
       id: 'h-4',
@@ -62,7 +68,7 @@ export const SEED_RESULTS: JobResult = {
       affected_area: 'Left side of the room near the exit door and back wall',
       recommendation: 'Organize storage materials, clear the exit path, and stack items securely to prevent collapse or blockage of emergency exits.',
       confidence: 0.85,
-      bounding_box: { x: 0, y: 0, width: 0, height: 0 },
+      bounding_box: { x: 2, y: 30, width: 22, height: 50 },
     },
   ],
   regulations: [
@@ -143,20 +149,33 @@ export const SEED_RESULTS: JobResult = {
     },
   ],
 }
+}
+
+/** Lazily-built seed results — computed fresh on each call (client-side only)
+ * to avoid SSR hydration mismatches from Date.now(). */
+export function getSeedResults(): JobResult {
+  return buildSeedResults()
+}
 
 // Pre-built trace events for the seed results
-export const SEED_EVENTS = [
-  { type: 'plan', model: 'Nemotron 3 Ultra', content: 'Analyzing image for occupational safety hazards. Plan: (1) scene understanding, (2) hazard identification, (3) severity assessment, (4) regulatory cross-reference, (5) recommendation synthesis.' },
-  { type: 'vlm_analyze', model: 'Nvidia/Nemotron-3.5-Super-VL', content: 'Scene understanding + hazard identification starting...' },
-  { type: 'vlm_detect', model: 'Nvidia/Nemotron-3.5-Super-VL', content: 'VLM returned scene analysis (3161 chars). Parsing hazards...' },
-  { type: 'vlm_detect', model: 'Nvidia/Nemotron-3.5-Super-VL', content: 'Hazard detected: FIRE_SMOKE — HIGH — Active welding operations generating bright sparks near gas cylinders' },
-  { type: 'vlm_detect', model: 'Nvidia/Nemotron-3.5-Super-VL', content: 'Hazard detected: FIRE_SMOKE — HIGH — Gasoline cans and aerosols stored next to space heater' },
-  { type: 'vlm_detect', model: 'Nvidia/Nemotron-3.5-Super-VL', content: 'Hazard detected: SLIP_TRIP_FALL — MEDIUM — Extension cords strewn across floor' },
-  { type: 'vlm_detect', model: 'Nvidia/Nemotron-3.5-Super-VL', content: 'Hazard detected: OTHER — MEDIUM — Cardboard boxes and pallets near exit door' },
-  { type: 'tavily_search', model: 'Tavily Live Search', content: 'Searching Australia safety regulations via Tavily API...' },
-  { type: 'tavily_search', model: 'Tavily Live Search', content: 'Found: Hot Works Fire Watch Requirements Australia: AS 1674.1 (3 citations for FIRE_SMOKE)' },
-  { type: 'tavily_search', model: 'Tavily Live Search', content: 'Found: NEW SAFEWORK AUSTRALIA GUIDANCE (3 citations for SLIP_TRIP_FALL)' },
-  { type: 'tavily_search', model: 'Tavily Live Search', content: 'Found: OSHA Regulations for Wooden Pallets (3 citations for OTHER)' },
-  { type: 'synthesize', model: 'Nvidia/Nemotron-3-Ultra-550b-a55b', content: 'Synthesizing report: 4 hazards identified, overall safety score = 35/100.' },
-  { type: 'report_ready', model: 'PDF Generator', content: 'Safety audit report generated. 4 findings. 3 regulation citations. Download ready.' },
-].map((e, i) => ({ ...e, timestamp: Date.now() - (15 - i) * 1000 }))
+const SEED_EVENT_DEFS = [
+  { type: 'plan' as const, model: 'Nemotron 3 Ultra', content: 'Analyzing image for occupational safety hazards. Plan: (1) scene understanding, (2) hazard identification, (3) severity assessment, (4) regulatory cross-reference, (5) recommendation synthesis.' },
+  { type: 'vlm_analyze' as const, model: 'Nvidia/Nemotron-3.5-Super-VL', content: 'Scene understanding + hazard identification starting...' },
+  { type: 'vlm_detect' as const, model: 'Nvidia/Nemotron-3.5-Super-VL', content: 'VLM returned scene analysis (3161 chars). Parsing hazards...' },
+  { type: 'vlm_detect' as const, model: 'Nvidia/Nemotron-3.5-Super-VL', content: 'Hazard detected: FIRE_SMOKE — HIGH — Active welding operations generating bright sparks near gas cylinders' },
+  { type: 'vlm_detect' as const, model: 'Nvidia/Nemotron-3.5-Super-VL', content: 'Hazard detected: FIRE_SMOKE — HIGH — Gasoline cans and aerosols stored next to space heater' },
+  { type: 'vlm_detect' as const, model: 'Nvidia/Nemotron-3.5-Super-VL', content: 'Hazard detected: SLIP_TRIP_FALL — MEDIUM — Extension cords strewn across floor' },
+  { type: 'vlm_detect' as const, model: 'Nvidia/Nemotron-3.5-Super-VL', content: 'Hazard detected: OTHER — MEDIUM — Cardboard boxes and pallets near exit door' },
+  { type: 'tavily_search' as const, model: 'Tavily Live Search', content: 'Searching Australia safety regulations via Tavily API...' },
+  { type: 'tavily_search' as const, model: 'Tavily Live Search', content: 'Found: Hot Works Fire Watch Requirements Australia: AS 1674.1 (3 citations for FIRE_SMOKE)' },
+  { type: 'tavily_search' as const, model: 'Tavily Live Search', content: 'Found: NEW SAFEWORK AUSTRALIA GUIDANCE (3 citations for SLIP_TRIP_FALL)' },
+  { type: 'tavily_search' as const, model: 'Tavily Live Search', content: 'Found: OSHA Regulations for Wooden Pallets (3 citations for OTHER)' },
+  { type: 'synthesize' as const, model: 'Nvidia/Nemotron-3-Ultra-550b-a55b', content: 'Synthesizing report: 4 hazards identified, overall safety score = 35/100.' },
+  { type: 'report_ready' as const, model: 'PDF Generator', content: 'Safety audit report generated. 4 findings. 3 regulation citations. Download ready.' },
+]
+
+/** Lazily-built trace events — computed fresh on each call (client-side only). */
+export function getSeedEvents(): TraceEvent[] {
+  const now = Date.now()
+  return SEED_EVENT_DEFS.map((e, i) => ({ ...e, timestamp: now - (15 - i) * 1000 }))
+}

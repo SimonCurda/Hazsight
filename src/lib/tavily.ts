@@ -19,6 +19,9 @@ export interface TavilyResult {
   url: string
   content: string
   score: number
+  /** Cleaned, substantive excerpt — navigation boilerplate stripped out.
+   * Falls back to the raw content if cleaning doesn't find anything better. */
+  clean_content?: string
 }
 
 export interface RegulationCitation {
@@ -206,6 +209,87 @@ export function tavilyAvailable(): boolean {
 }
 
 /**
+ * Clean Tavily content snippets to show the actual regulation text instead of
+ * page navigation boilerplate ("Tisknout", "Zavřít tiskovou verzi", "Print",
+ * "PDF download", cookie banners, etc.).
+ *
+ * Strategy:
+ * 1. Split into lines/sentences
+ * 2. Drop lines that are pure navigation/UI chrome (short + matching boilerplate patterns)
+ * 3. Keep the most substantive lines (longer, contain legal keywords)
+ * 4. Return the cleaned excerpt, or fall back to the original if nothing good remains.
+ */
+export function cleanTavilyContent(raw: string, maxLen: number = 320): string {
+  if (!raw) return ''
+
+  // Boilerplate patterns — Czech + English law-site navigation UI
+  const boilerplate = [
+    /^tisknout/i, /zavřít tisk/i, /tisková verze/i, /zavřít/i,
+    /^print$/i, /^close$/i, /print version/i, /download.*pdf/i, /^pdf$/i,
+    /cookies?/i, /souhlasím/i, /povolit vše/i, /nastavení cookies?/i,
+    /přijmout/i, /odmítnout/i, /accept all/i, /reject all/i,
+    /zpět na/i, /back to/i, /^home$/i, /^úvod$/i,
+    /předchozí/i, /následující/i, /previous/i, /next/i,
+    /zákonů pro lidi/i, /zákony pro lidi/i, /laws for people/i,
+    /platnost od/i, /účinnost od/i, /částka/i, /zařazeno v/i,
+    /valid from/i, /effective from/i, /collection/i,
+    /tisknout.*zavřít/i, /zavřít.*tisk/i,
+    /^#$/i, /^§\s*$/i,
+    /shrnuto/i, /tisková/i,
+  ]
+
+  // Split on newlines AND the " | " separator Tavily sometimes uses,
+  // plus sentence boundaries for dense snippets.
+  const segments = raw
+    .split(/\n|\s*\|\s*|(?<=[.!?])\s+(?=[A-ZÁ-Ž])/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0)
+
+  // Score each segment: keep substantive legal content, drop boilerplate
+  const scored = segments.map((seg) => {
+    let score = seg.length // longer = more likely substantive
+    // Penalize boilerplate heavily
+    if (boilerplate.some((re) => re.test(seg))) score -= 500
+    // Penalize very short segments (likely UI labels)
+    if (seg.length < 20) score -= 50
+    // Bonus for legal keywords (Czech + English)
+    if (/\b(?:§|odstavec|písmeno|zákon|vyhláška|nařízení|směrnice|povinnost|zaměstnavatel|práci|bezpečnost|ochrana)\b/i.test(seg)) score += 80
+    if (/\b(?:shall|must|required|regulation|article|section|employer|safety|protect|workplace)\b/i.test(seg)) score += 60
+    // Penalize lines that are mostly punctuation / symbols
+    if ((seg.match(/[A-Za-zÁ-Žá-ž]/g) || []).length < seg.length * 0.4) score -= 40
+    return { seg, score }
+  })
+
+  // Pick the top segments until we hit maxLen
+  const good = scored
+    .filter((s) => s.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 4)
+    .sort((a, b) => {
+      // Re-sort by original order for readability
+      const ia = segments.indexOf(a.seg)
+      const ib = segments.indexOf(b.seg)
+      return ia - ib
+    })
+
+  let cleaned = good.map((g) => g.seg).join(' ').trim()
+
+  // If cleaning stripped everything useful, fall back to the raw content
+  if (cleaned.length < 30) {
+    cleaned = raw.trim()
+  }
+
+  // Truncate to maxLen at a word boundary
+  if (cleaned.length > maxLen) {
+    const cut = cleaned.slice(0, maxLen)
+    const lastSpace = cut.lastIndexOf(' ')
+    cleaned = (lastSpace > maxLen * 0.6 ? cut.slice(0, lastSpace) : cut).trim() + '…'
+  }
+
+  return cleaned
+}
+
+/**
  * Search for safety regulations relevant to a hazard category.
  *
  * If TAVILY_API_KEY is set, makes a real Tavily API call with jurisdiction-specific
@@ -237,11 +321,15 @@ export async function searchRegulations(
 
   if (!tavilyAvailable()) {
     // Mock fallback — return pre-written citations
-    return MOCK_REGULATIONS[hazardCategory] || MOCK_REGULATIONS.OTHER
+    const mock = MOCK_REGULATIONS[hazardCategory] || MOCK_REGULATIONS.OTHER
+    return mock.map((r) => ({ ...r, clean_content: r.content }))
   }
 
   // Real Tavily API call — use include_domains for predefined jurisdictions,
-  // no domain restriction for custom (broader search)
+  // no domain restriction for custom (broader search).
+  // include_answer: true → Tavily generates a clean AI summary of the relevant
+  // regulation content. This is what we display as the preview, instead of the
+  // raw page snippet which often contains navigation boilerplate.
   try {
     const response = await fetch('https://api.tavily.com/search', {
       method: 'POST',
@@ -249,9 +337,9 @@ export async function searchRegulations(
       body: JSON.stringify({
         api_key: process.env.TAVILY_API_KEY,
         query,
-        search_depth: 'basic',
+        search_depth: 'advanced',
         max_results: 3,
-        include_answer: false,
+        include_answer: true,
         ...(includeDomains ? { include_domains: includeDomains } : {}),
       }),
     })
@@ -262,12 +350,30 @@ export async function searchRegulations(
     }
 
     const data = await response.json()
-    return (data.results || []).map((r: any) => ({
-      title: r.title || '',
-      url: r.url || '',
-      content: (r.content || '').slice(0, 300),
-      score: r.score || 0,
-    }))
+    // Tavily's AI-generated answer — a clean summary of the relevant law.
+    const tavilyAnswer: string = (data.answer || '').trim()
+
+    return (data.results || []).map((r: any, idx: number) => {
+      const rawContent: string = r.content || ''
+      // Clean the raw snippet to strip navigation boilerplate
+      const cleaned = cleanTavilyContent(rawContent, 320)
+      // For the top result, prefer the AI answer (cleaner + more relevant) if
+      // the cleaned snippet is short or boilerplate-heavy.
+      const useAnswer =
+        idx === 0 &&
+        tavilyAnswer.length > 60 &&
+        (cleaned.length < 60 || /tisknout|zavřít|print|close|pdf|cookie/i.test(cleaned))
+
+      return {
+        title: r.title || '',
+        url: r.url || '',
+        content: rawContent.slice(0, 300),
+        clean_content: useAnswer
+          ? cleanTavilyContent(tavilyAnswer, 320)
+          : cleaned,
+        score: r.score || 0,
+      }
+    })
   } catch (err) {
     console.error('Tavily search failed:', err)
     return MOCK_REGULATIONS[hazardCategory] || MOCK_REGULATIONS.OTHER

@@ -14,6 +14,7 @@ import {
   Copy,
   Check,
   Brain,
+  Scan,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -32,7 +33,8 @@ import {
   type TraceEvent,
   type JobResult,
 } from '@/lib/mock-data'
-import { SEED_RESULTS, SEED_EVENTS } from '@/lib/seed-data'
+import { getSeedResults, getSeedEvents } from '@/lib/seed-data'
+import { getSeedResults2, getSeedEvents2 } from '@/lib/seed-data-2'
 
 /**
  * Convert any image file to a PNG data URL, resizing if too large.
@@ -298,11 +300,22 @@ export default function Home() {
   }
 
   // Load pre-saved results without calling the API (saves credits)
-  // Lets users test chatbot, PDF, heatmap etc. without spending Nebius/Tavily credits
+  // Lets users test chatbot, PDF, bounding boxes etc. without spending Nebius/Tavily credits
   const handleLoadSeed = () => {
-    setPreviewUrl(SEED_RESULTS.image_url)
-    setEvents(SEED_EVENTS)
-    setResult(SEED_RESULTS)
+    const results = getSeedResults()
+    setPreviewUrl(results.image_url)
+    setEvents(getSeedEvents())
+    setResult(results)
+    setIsLive(false)
+    setView('results')
+  }
+
+  // Load second seed — warehouse scene with REAL bounding boxes from Nemotron 3.5 Super VL
+  const handleLoadSeed2 = () => {
+    const results = getSeedResults2()
+    setPreviewUrl(results.image_url)
+    setEvents(getSeedEvents2())
+    setResult(results)
     setIsLive(false)
     setView('results')
   }
@@ -521,17 +534,31 @@ export default function Home() {
               </div>
             </div>
             <div className="mt-6 text-center">
-              <Button
-                variant="outline"
-                size="lg"
-                className="gap-2"
-                onClick={handleLoadSeed}
-              >
-                <Brain className="h-4 w-4 text-lime-500" />
-                Load saved results
-              </Button>
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="gap-2"
+                  onClick={handleLoadSeed}
+                >
+                  <Brain className="h-4 w-4 text-lime-500" />
+                  Load saved results
+                </Button>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="gap-2 border-lime-500/40 bg-lime-500/5 hover:border-lime-500/60 hover:bg-lime-500/10"
+                  onClick={handleLoadSeed2}
+                >
+                  <Scan className="h-4 w-4 text-lime-500" />
+                  Load saved results 2
+                </Button>
+              </div>
               <p className="mt-2 text-xs text-muted-foreground">
                 Loads pre-built analysis — no API credits used. Test chatbot, PDF, regulations.
+              </p>
+              <p className="mt-1 text-[10px] text-muted-foreground/60">
+                {'// Result 2 includes real bounding boxes from Nemotron 3.5 Super VL'}
               </p>
               {/* Upload your own image */}
               <div className="mt-4">

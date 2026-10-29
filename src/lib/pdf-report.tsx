@@ -386,7 +386,7 @@ export function PdfReport({
                     {r.title}
                   </Link>
                   <Text style={styles.citationUrl}>{r.url}</Text>
-                  <Text style={styles.citationContent}>{r.content}</Text>
+                  <Text style={styles.citationContent}>{r.clean_content || r.content}</Text>
                 </View>
               ))}
             </View>

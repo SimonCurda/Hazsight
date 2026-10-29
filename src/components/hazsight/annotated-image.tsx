@@ -13,7 +13,7 @@ interface AnnotatedImageProps {
   hazards: DetectedHazard[]
   onHazardClick?: (hazardId: string) => void
   selectedHazardId?: string | null
-  showHeatmap?: boolean
+  showBoxes?: boolean
 }
 
 export function AnnotatedImage({
@@ -21,32 +21,11 @@ export function AnnotatedImage({
   hazards,
   onHazardClick,
   selectedHazardId,
-  showHeatmap = false,
+  showBoxes = true,
 }: AnnotatedImageProps) {
   const visibleHazards = hazards.filter(
     (h) => h.bounding_box.width > 0 && h.bounding_box.height > 0,
   )
-
-  // Heatmap: each hazard gets a radial gradient overlay at its center.
-  // Color + intensity based on severity (CRITICAL = red, HIGH = orange, MEDIUM = amber, LOW = green)
-  const severityHeatmap = (severity: string) => {
-    switch (severity) {
-      case 'CRITICAL': return 'rgba(239, 68, 68, 0.6)'
-      case 'HIGH': return 'rgba(249, 115, 22, 0.55)'
-      case 'MEDIUM': return 'rgba(245, 158, 11, 0.45)'
-      case 'LOW': return 'rgba(16, 185, 129, 0.35)'
-      default: return 'rgba(100, 100, 100, 0.3)'
-    }
-  }
-  const severityRing = (severity: string) => {
-    switch (severity) {
-      case 'CRITICAL': return '2px solid rgba(239, 68, 68, 0.8)'
-      case 'HIGH': return '2px solid rgba(249, 115, 22, 0.7)'
-      case 'MEDIUM': return '2px solid rgba(245, 158, 11, 0.6)'
-      case 'LOW': return '2px solid rgba(16, 185, 129, 0.5)'
-      default: return '2px solid rgba(100, 100, 100, 0.4)'
-    }
-  }
 
   return (
     <div className="relative overflow-hidden rounded-xl border border-border bg-black">
@@ -63,7 +42,7 @@ export function AnnotatedImage({
           </p>
         </div>
       )}
-      {visibleHazards.map((hazard, idx) => {
+      {showBoxes && visibleHazards.map((hazard, idx) => {
         const colors = SEVERITY_COLORS[hazard.severity]
         const isSelected = selectedHazardId === hazard.id
         // Flip the tooltip below the box if it's too close to the top edge
@@ -135,32 +114,8 @@ export function AnnotatedImage({
         )
       })}
 
-      {/* Heatmap overlay — colored radial gradients at each hazard's center */}
-      {showHeatmap && visibleHazards.length > 0 && visibleHazards.map((hazard, idx) => {
-        const cx = hazard.bounding_box.x + hazard.bounding_box.width / 2
-        const cy = hazard.bounding_box.y + hazard.bounding_box.height / 2
-        const radius = Math.max(hazard.bounding_box.width, hazard.bounding_box.height, 10) * 1.2
-        const heatColor = severityHeatmap(hazard.severity)
-        const ringColor = severityRing(hazard.severity)
-        return (
-          <div
-            key={`heat-${idx}`}
-            className="pointer-events-none absolute z-20"
-            style={{
-              left: `${cx - radius / 2}%`,
-              top: `${cy - radius / 2}%`,
-              width: `${radius}%`,
-              height: `${radius}%`,
-              background: `radial-gradient(circle, ${heatColor} 0%, ${heatColor.replace(/0\.\d+\)/, '0.15)')} 50%, transparent 80%)`,
-              border: ringColor,
-              borderRadius: '50%',
-            }}
-          />
-        )
-      })}
-
       {/* Fire origin point markers — flame icon at the detected fire origin */}
-      {visibleHazards
+      {showBoxes && visibleHazards
         .filter((h) => h.fire_origin_point)
         .map((hazard, idx) => (
           <motion.div

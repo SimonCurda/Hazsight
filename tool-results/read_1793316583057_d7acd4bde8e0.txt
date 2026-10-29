@@ -1,0 +1,736 @@
+     1→     1→'use client'
+     2→     2→
+     3→     3→import * as React from 'react'
+     4→     4→import Link from 'next/link'
+     5→     5→import {
+     6→     6→  AlertTriangle,
+     7→     7→  Github,
+     8→     8→  ExternalLink,
+     9→     9→  ArrowLeft,
+    10→    10→  Sparkles,
+    11→    11→  Loader2,
+    12→    12→  RotateCcw,
+    13→    13→  Activity,
+    14→    14→  Copy,
+    15→    15→  Check,
+    16→    16→  Brain,
+    17→    17→} from 'lucide-react'
+    18→    18→
+    19→    19→import { Button } from '@/components/ui/button'
+    20→    20→import { Badge } from '@/components/ui/badge'
+    21→    21→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+    22→    22→import AboutTeamCard from '@/components/hazsight/about-team-card'
+    23→    23→import { LandingView } from '@/components/hazsight/landing-view'
+    24→    24→import { UploadDropzone } from '@/components/hazsight/upload-dropzone'
+    25→    25→import { ProcessingView } from '@/components/hazsight/processing-view'
+    26→    26→import { ResultsView } from '@/components/hazsight/results-view'
+    27→    27→import { MonitoringView } from '@/components/hazsight/monitoring-view'
+    28→    28→import {
+    29→    29→  MOCK_TRACE_EVENTS,
+    30→    30→  MOCK_JOB_RESULT,
+    31→    31→  MOCK_IMAGE_URL,
+    32→    32→  type TraceEvent,
+    33→    33→  type JobResult,
+    34→    34→} from '@/lib/mock-data'
+    35→    35→import { SEED_RESULTS, SEED_EVENTS } from '@/lib/seed-data'
+    36→    36→
+    37→    37→/**
+    38→    38→ * Convert any image file to a PNG data URL, resizing if too large.
+    39→    39→ * Fixes JPEG/JPG/WebP compatibility + reduces body size for Vercel/VLM.
+    40→    40→ */
+    41→    41→async function fileToPngDataUrl(file: File, maxSize: number = 1920): Promise<string> {
+    42→    42→  return new Promise((resolve, reject) => {
+    43→    43→    const img = new Image()
+    44→    44→    img.onload = () => {
+    45→    45→      let { width, height } = img
+    46→    46→      // Resize if larger than maxSize on any side
+    47→    47→      if (width > maxSize || height > maxSize) {
+    48→    48→        const ratio = Math.min(maxSize / width, maxSize / height)
+    49→    49→        width = Math.round(width * ratio)
+    50→    50→        height = Math.round(height * ratio)
+    51→    51→      }
+    52→    52→      const canvas = document.createElement('canvas')
+    53→    53→      canvas.width = width
+    54→    54→      canvas.height = height
+    55→    55→      const ctx = canvas.getContext('2d')!
+    56→    56→      ctx.drawImage(img, 0, 0, width, height)
+    57→    57→      const dataUrl = canvas.toDataURL('image/png')
+    58→    58→      URL.revokeObjectURL(img.src)
+    59→    59→      resolve(dataUrl)
+    60→    60→    }
+    61→    61→    img.onerror = () => {
+    62→    62→      URL.revokeObjectURL(img.src)
+    63→    63→      reject(new Error('Failed to load image'))
+    64→    64→    }
+    65→    65→    img.src = URL.createObjectURL(file)
+    66→    66→  })
+    67→    67→}
+    68→    68→
+    69→    69→type View = 'landing' | 'uploading' | 'processing' | 'results' | 'monitoring' | 'error'
+    70→    70→
+    71→    71→export default function Home() {
+    72→    72→  // Restore last session from localStorage on mount (survives refresh/close)
+    73→    73→  const [view, setView] = React.useState<View>(() => {
+    74→    74→    if (typeof window === 'undefined') return 'landing'
+    75→    75→    try {
+    76→    76→      const saved = localStorage.getItem('hazsight_view')
+    77→    77→      const savedResult = localStorage.getItem('hazsight_result')
+    78→    78→      if (saved === 'results' && savedResult) return 'results'
+    79→    79→    } catch {}
+    80→    80→    return 'landing'
+    81→    81→  })
+    82→    82→  const [previewUrl, setPreviewUrl] = React.useState<string | null>(() => {
+    83→    83→    if (typeof window === 'undefined') return null
+    84→    84→    try { return localStorage.getItem('hazsight_preview') } catch { return null }
+    85→    85→  })
+    86→    86→  const [events, setEvents] = React.useState<TraceEvent[]>(() => {
+    87→    87→    if (typeof window === 'undefined') return []
+    88→    88→    try {
+    89→    89→      const saved = localStorage.getItem('hazsight_events')
+    90→    90→      return saved ? JSON.parse(saved) : []
+    91→    91→    } catch { return [] }
+    92→    92→  })
+    93→    93→  const [result, setResult] = React.useState<JobResult | null>(() => {
+    94→    94→    if (typeof window === 'undefined') return null
+    95→    95→    try {
+    96→    96→      const saved = localStorage.getItem('hazsight_result')
+    97→    97→      return saved ? JSON.parse(saved) : null
+    98→    98→    } catch { return null }
+    99→    99→  })
+   100→   100→  const [jobId, setJobId] = React.useState<string | null>(null)
+   101→   101→  const [uploadedFile, setUploadedFile] = React.useState<File | null>(null)
+   102→   102→  const [isLive, setIsLive] = React.useState(false)
+   103→   103→  const [isPosting, setIsPosting] = React.useState(false)
+   104→   104→  const [error, setError] = React.useState<string | null>(null)
+   105→   105→  const [jurisdiction, setJurisdiction] = React.useState<string>(() => {
+   106→   106→    if (typeof window === 'undefined') return 'CZECH'
+   107→   107→    try { return localStorage.getItem('hazsight_jurisdiction') || 'CZECH' } catch { return 'CZECH' }
+   108→   108→  })
+   109→   109→  const [customJurisdiction, setCustomJurisdiction] = React.useState('')
+   110→   110→  const [copied, setCopied] = React.useState(false)
+   111→   111→
+   112→   112→  // Persist view + result + events to localStorage
+   113→   113→  React.useEffect(() => {
+   114→   114→    try { localStorage.setItem('hazsight_view', view) } catch {}
+   115→   115→  }, [view])
+   116→   116→
+   117→   117→  React.useEffect(() => {
+   118→   118→    try {
+   119→   119→      if (result) localStorage.setItem('hazsight_result', JSON.stringify(result))
+   120→   120→      else localStorage.removeItem('hazsight_result')
+   121→   121→    } catch {}
+   122→   122→  }, [result])
+   123→   123→
+   124→   124→  React.useEffect(() => {
+   125→   125→    try {
+   126→   126→      if (events.length > 0) localStorage.setItem('hazsight_events', JSON.stringify(events))
+   127→   127→    } catch {}
+   128→   128→  }, [events])
+   129→   129→
+   130→   130→  React.useEffect(() => {
+   131→   131→    try {
+   132→   132→      if (previewUrl) localStorage.setItem('hazsight_preview', previewUrl)
+   133→   133→    } catch {}
+   134→   134→  }, [previewUrl])
+   135→   135→
+   136→   136→  React.useEffect(() => {
+   137→   137→    try { localStorage.setItem('hazsight_jurisdiction', jurisdiction) } catch {}
+   138→   138→  }, [jurisdiction])
+   139→   139→
+   140→   140→  // Poll for trace events + job status while processing.
+   141→   141→  React.useEffect(() => {
+   142→   142→    if (view !== 'processing' || !jobId) return
+   143→   143→
+   144→   144→    let lastEventTimestamp = 0
+   145→   145→    setIsLive(true)
+   146→   146→
+   147→   147→    const poll = async () => {
+   148→   148→      try {
+   149→   149→        // 1. Fetch new trace events since lastTimestamp.
+   150→   150→        const traceRes = await fetch(
+   151→   151→          `/api/jobs/${jobId}/trace?since=${lastEventTimestamp}`,
+   152→   152→        )
+   153→   153→        if (traceRes.ok) {
+   154→   154→          const data = await traceRes.json()
+   155→   155→          if (data.events && data.events.length > 0) {
+   156→   156→            setEvents((prev) => [...prev, ...data.events])
+   157→   157→            lastEventTimestamp = data.events[data.events.length - 1].timestamp
+   158→   158→          }
+   159→   159→        }
+   160→   160→
+   161→   161→        // 2. Check job status.
+   162→   162→        const jobRes = await fetch(`/api/jobs/${jobId}`)
+   163→   163→        if (jobRes.ok) {
+   164→   164→          const jobData: JobResult = await jobRes.json()
+   165→   165→          if (jobData.status === 'completed') {
+   166→   166→            setResult({
+   167→   167→              ...jobData,
+   168→   168→              image_url: previewUrl || jobData.image_url,
+   169→   169→            })
+   170→   170→            setIsLive(false)
+   171→   171→            setView('results')
+   172→   172→          } else if (jobData.status === 'failed') {
+   173→   173→            setIsLive(false)
+   174→   174→            setError(jobData.error || 'Analysis failed')
+   175→   175→            setView('error')
+   176→   176→          }
+   177→   177→        }
+   178→   178→      } catch (err) {
+   179→   179→        console.error('Polling error:', err)
+   180→   180→      }
+   181→   181→    }
+   182→   182→
+   183→   183→    // Poll immediately, then every 1s.
+   184→   184→    void poll()
+   185→   185→    const interval = setInterval(poll, 1000)
+   186→   186→    return () => clearInterval(interval)
+   187→   187→  }, [view, jobId, previewUrl])
+   188→   188→
+   189→   189→  const handleUploadClick = () => {
+   190→   190→    setView('uploading')
+   191→   191→  }
+   192→   192→
+   193→   193→  const handleFileSelected = (file: File, url: string) => {
+   194→   194→    setUploadedFile(file)
+   195→   195→    setPreviewUrl(url)
+   196→   196→  }
+   197→   197→
+   198→   198→  const handleClear = () => {
+   199→   199→    setUploadedFile(null)
+   200→   200→    setPreviewUrl(null)
+   201→   201→  }
+   202→   202→
+   203→   203→  // Shared analysis starter — POST is synchronous, returns full result + events.
+   204→   204→  // On Vercel, in-memory store doesn't persist across instances, so we can't
+   205→   205→  // poll. Instead, the POST returns everything and we "play back" the trace
+   206→   206→  // events with delays to simulate the live timeline.
+   207→   207→  const startAnalysis = async (body: BodyInit, imgUrl: string) => {
+   208→   208→    setPreviewUrl(imgUrl)
+   209→   209→    setEvents([])
+   210→   210→    setResult(null)
+   211→   211→    setJobId(null)
+   212→   212→    setUploadedFile(null)
+   213→   213→    setError(null)
+   214→   214→    setIsPosting(true)
+   215→   215→    setView('processing')
+   216→   216→
+   217→   217→    try {
+   218→   218→      const headers = typeof body === 'string'
+   219→   219→        ? { 'Content-Type': 'application/json' }
+   220→   220→        : undefined
+   221→   221→      const res = await fetch('/api/analyze', { method: 'POST', body, headers })
+   222→   222→
+   223→   223→      // Handle non-JSON responses (Vercel function timeout, error page, etc.)
+   224→   224→      if (!res.ok) {
+   225→   225→        const text = await res.text().catch(() => 'Unknown error')
+   226→   226→        throw new Error(`Server returned ${res.status}: ${text.slice(0, 500)}`)
+   227→   227→      }
+   228→   228→
+   229→   229→      const contentType = res.headers.get('content-type') || ''
+   230→   230→      if (!contentType.includes('application/json')) {
+   231→   231→        const text = await res.text().catch(() => 'Unknown error')
+   232→   232→        throw new Error(`Server returned non-JSON response (possible function timeout):\n${text.slice(0, 500)}`)
+   233→   233→      }
+   234→   234→
+   235→   235→      const data = await res.json().catch(() => {
+   236→   236→        throw new Error('Failed to parse server response — the analysis may have timed out on Vercel (max 60s). Try again or use a smaller image.')
+   237→   237→      })
+   238→   238→
+   239→   239→      if (data.error || !data.result) {
+   240→   240→        throw new Error(data.error || 'Analysis failed — check debug panel')
+   241→   241→      }
+   242→   242→
+   243→   243→      // Store in localStorage for debug panel (works on Vercel where in-memory store doesn't persist)
+   244→   244→      try {
+   245→   245→        localStorage.setItem('hazsight_last_analysis', JSON.stringify({
+   246→   246→          timestamp: new Date().toISOString(),
+   247→   247→          status: data.status,
+   248→   248→          error: data.error,
+   249→   249→          result: data.result,
+   250→   250→          events: data.events,
+   251→   251→          jurisdiction,
+   252→   252→        }))
+   253→   253→      } catch {}
+   254→   254→
+   255→   255→      // Switch from "connecting" spinner to live trace timeline
+   256→   256→      setIsPosting(false)
+   257→   257→      setIsLive(true)
+   258→   258→
+   259→   259→      // Play back trace events with delays to simulate live timeline
+   260→   260→      const events = data.events || []
+   261→   261→      for (let i = 0; i < events.length; i++) {
+   262→   262→        setEvents(prev => [...prev, events[i]])
+   263→   263→        await new Promise(r => setTimeout(r, events.length > 15 ? 150 : 300))
+   264→   264→      }
+   265→   265→
+   266→   266→      // Set the result and switch to results view
+   267→   267→      const jobResult: JobResult = {
+   268→   268→        ...data.result,
+   269→   269→        image_url: imgUrl || data.result.image_url,
+   270→   270→      }
+   271→   271→      setResult(jobResult)
+   272→   272→      setIsLive(false)
+   273→   273→      setView('results')
+   274→   274→    } catch (err) {
+   275→   275→      setError(err instanceof Error ? err.message : String(err))
+   276→   276→      setView('error')
+   277→   277→    } finally {
+   278→   278→      setIsPosting(false)
+   279→   279→    }
+   280→   280→  }
+   281→   281→
+   282→   282→  const handleAnalyze = async () => {
+   283→   283→    if (!uploadedFile) return
+   284→   284→    const jur = jurisdiction === 'CUSTOM' ? (customJurisdiction || 'CZECH') : jurisdiction
+   285→   285→    const dataUrl = await fileToPngDataUrl(uploadedFile)
+   286→   286→    void startAnalysis(
+   287→   287→      JSON.stringify({ image_base64: dataUrl.split(',')[1], jurisdiction: jur }),
+   288→   288→      previewUrl || dataUrl,
+   289→   289→    )
+   290→   290→  }
+   291→   291→
+   292→   292→  const handleTryDemo = () => {
+   293→   293→    const jur = jurisdiction === 'CUSTOM' ? (customJurisdiction || 'CZECH') : jurisdiction
+   294→   294→    void startAnalysis(
+   295→   295→      JSON.stringify({ image_url: MOCK_IMAGE_URL, jurisdiction: jur }),
+   296→   296→      MOCK_IMAGE_URL,
+   297→   297→    )
+   298→   298→  }
+   299→   299→
+   300→   300→  // Load pre-saved results without calling the API (saves credits)
+   301→   301→  // Lets users test chatbot, PDF, heatmap etc. without spending Nebius/Tavily credits
+   302→   302→  const handleLoadSeed = () => {
+   303→   303→    setPreviewUrl(SEED_RESULTS.image_url)
+   304→   304→    setEvents(SEED_EVENTS)
+   305→   305→    setResult(SEED_RESULTS)
+   306→   306→    setIsLive(false)
+   307→   307→    setView('results')
+   308→   308→  }
+   309→   309→
+   310→   310→  const handleReset = () => {
+   311→   311→    setView('landing')
+   312→   312→    setPreviewUrl(null)
+   313→   313→    setEvents([])
+   314→   314→    setResult(null)
+   315→   315→    setJobId(null)
+   316→   316→    setUploadedFile(null)
+   317→   317→    setError(null)
+   318→   318→    setIsPosting(false)
+   319→   319→  }
+   320→   320→
+   321→   321→  const handleBackToHome = () => {
+   322→   322→    setView('landing')
+   323→   323→  }
+   324→   324→
+   325→   325→  const handleMonitoringClick = () => {
+   326→   326→    setView('monitoring')
+   327→   327→  }
+   328→   328→
+   329→   329→  const handleJobSelectFromMonitoring = (jobResult: JobResult) => {
+   330→   330→    setResult(jobResult)
+   331→   331→    setPreviewUrl(jobResult.image_url)
+   332→   332→    setView('results')
+   333→   333→  }
+   334→   334→
+   335→   335→  return (
+   336→   336→    <div className="min-h-screen flex flex-col">
+   337→   337→      {/* Sticky header — terminal style */}
+   338→   338→      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+   339→   339→        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-3 sm:px-4">
+   340→   340→          <div className="flex items-center gap-1 sm:gap-2 min-w-0">
+   341→   341→            {view !== 'landing' && (
+   342→   342→              <Button
+   343→   343→                variant="ghost"
+   344→   344→                size="icon"
+   345→   345→                onClick={handleBackToHome}
+   346→   346→                aria-label="Back to home"
+   347→   347→                className="rounded hazsight-readout flex-shrink-0"
+   348→   348→              >
+   349→   349→                <ArrowLeft className="h-4 w-4" />
+   350→   350→              </Button>
+   351→   351→            )}
+   352→   352→            <AboutTeamCard onHomeClick={handleBackToHome} />
+   353→   353→          </div>
+   354→   354→          <nav className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
+   355→   355→            {view === 'landing' && (
+   356→   356→              <>
+   357→   357→                <Button variant="ghost" size="sm" asChild className="text-xs hidden md:inline-flex">
+   358→   358→                  <Link href="#how-it-works">Process</Link>
+   359→   359→                </Button>
+   360→   360→                <Button variant="ghost" size="sm" asChild className="text-xs hidden md:inline-flex">
+   361→   361→                  <Link href="#hazards">Hazards</Link>
+   362→   362→                </Button>
+   363→   363→              </>
+   364→   364→            )}
+   365→   365→            <Button
+   366→   366→              variant={view === 'monitoring' ? 'default' : 'ghost'}
+   367→   367→              size="sm"
+   368→   368→              className="gap-1 text-xs"
+   369→   369→              onClick={handleMonitoringClick}
+   370→   370→            >
+   371→   371→              <Activity className="h-3.5 w-3.5" />
+   372→   372→              <span className="hidden sm:inline">Monitoring</span>
+   373→   373→            </Button>
+   374→   374→            <Button variant="ghost" size="icon" asChild className="rounded flex-shrink-0">
+   375→   375→              <a
+   376→   376→                href="https://github.com/SimonCurda/Hazsight"
+   377→   377→                target="_blank"
+   378→   378→                rel="noopener noreferrer"
+   379→   379→                aria-label="GitHub repository"
+   380→   380→              >
+   381→   381→                <Github className="h-4 w-4" />
+   382→   382→              </a>
+   383→   383→            </Button>
+   384→   384→          </nav>
+   385→   385→        </div>
+   386→   386→        {/* Tech divider line */}
+   387→   387→        <div className="h-px bg-gradient-to-r from-transparent via-lime-500/40 to-transparent" />
+   388→   388→      </header>
+   389→   389→
+   390→   390→      {/* Main content — switches based on view */}
+   391→   391→      <main className="flex-1">
+   392→   392→        {view === 'landing' && <LandingView onUploadClick={handleUploadClick} />}
+   393→   393→
+   394→   394→        {view === 'uploading' && (
+   395→   395→          <section className="mx-auto max-w-3xl px-4 py-12">
+   396→   396→            <div className="mb-8 text-center">
+   397→   397→              <h1 className="font-mono text-3xl font-bold tracking-tight">
+   398→   398→                Upload a photo for analysis
+   399→   399→              </h1>
+   400→   400→              <p className="mt-2 text-sm text-muted-foreground">
+   401→   401→                Drop an image of any room, workspace, or industrial site.
+   402→   402→                We&apos;ll analyze it for safety hazards in ~30 seconds.
+   403→   403→              </p>
+   404→   404→            </div>
+   405→   405→
+   406→   406→            {/* Jurisdiction selector — determines which country's laws Tavily searches */}
+   407→   407→            <div className="hazsight-glass mb-6 rounded-xl border border-border/40 bg-card/80 p-4 shadow-lg shadow-black/20">
+   408→   408→              <div className="flex flex-wrap items-center gap-3">
+   409→   409→                <span className="hazsight-readout text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+   410→   410→                  {'// Jurisdiction:'}
+   411→   411→                </span>
+   412→   412→                <div className="flex flex-wrap gap-1.5">
+   413→   413→                  {[
+   414→   414→                    { code: 'CZECH', label: '🇨🇿 Czech' },
+   415→   415→                    { code: 'USA', label: '🇺🇸 USA (OSHA)' },
+   416→   416→                    { code: 'JAPAN', label: '🇯🇵 Japan' },
+   417→   417→                    { code: 'EU', label: '🇪🇺 EU' },
+   418→   418→                    { code: 'UK', label: '🇬🇧 UK (HSE)' },
+   419→   419→                    { code: 'INTERNATIONAL', label: '🌍 ISO' },
+   420→   420→                  ].map((j) => (
+   421→   421→                    <button
+   422→   422→                      key={j.code}
+   423→   423→                      onClick={() => { setJurisdiction(j.code); setCustomJurisdiction('') }}
+   424→   424→                      className={`rounded-lg border px-2.5 py-1 font-mono text-[11px] transition-all ${
+   425→   425→                        jurisdiction === j.code
+   426→   426→                          ? 'border-lime-500/60 bg-lime-500/15 text-lime-400'
+   427→   427→                          : 'border-border/40 bg-card/30 text-muted-foreground hover:border-lime-500/30 hover:text-foreground'
+   428→   428→                      }`}
+   429→   429→                    >
+   430→   430→                      {j.label}
+   431→   431→                    </button>
+   432→   432→                  ))}
+   433→   433→                  {/* Custom jurisdiction button */}
+   434→   434→                  <button
+   435→   435→                    onClick={() => setJurisdiction('CUSTOM')}
+   436→   436→                    className={`rounded-lg border px-2.5 py-1 font-mono text-[11px] transition-all ${
+   437→   437→                      jurisdiction === 'CUSTOM'
+   438→   438→                        ? 'border-lime-500/60 bg-lime-500/15 text-lime-400'
+   439→   439→                        : 'border-border/40 bg-card/30 text-muted-foreground hover:border-lime-500/30 hover:text-foreground'
+   440→   440→                    }`}
+   441→   441→                  >
+   442→   442→                    ✏️ Custom
+   443→   443→                  </button>
+   444→   444→                </div>
+   445→   445→              </div>
+   446→   446→
+   447→   447→              {/* Custom jurisdiction text input — shown when "Custom" is selected */}
+   448→   448→              {jurisdiction === 'CUSTOM' && (
+   449→   449→                <div className="mt-3 flex items-center gap-2">
+   450→   450→                  <input
+   451→   451→                    type="text"
+   452→   452→                    value={customJurisdiction}
+   453→   453→                    onChange={(e) => setCustomJurisdiction(e.target.value)}
+   454→   454→                    placeholder="e.g. Norway, Germany, Australia, Brazil..."
+   455→   455→                    className="flex-1 rounded-lg border border-border/40 bg-background/50 px-3 py-1.5 text-sm outline-none focus:border-lime-500/30"
+   456→   456→                  />
+   457→   457→                  <span className="text-[10px] text-muted-foreground/70">
+   458→   458→                    Tavily will search this country&apos;s safety laws
+   459→   459→                  </span>
+   460→   460→                </div>
+   461→   461→              )}
+   462→   462→
+   463→   463→              <p className="mt-2 text-[10px] text-muted-foreground/70">
+   464→   464→                Determines which country&apos;s safety regulations Tavily searches for — affects the citations in the report.
+   465→   465→                {jurisdiction === 'CUSTOM' && customJurisdiction && (
+   466→   466→                  <span className="text-lime-400"> → searching: {customJurisdiction}</span>
+   467→   467→                )}
+   468→   468→              </p>
+   469→   469→            </div>
+   470→   470→
+   471→   471→            {/* API status checker — verify Nebius + Tavily keys work before analyzing */}
+   472→   472→            <div className="mb-4 flex items-center gap-3">
+   473→   473→              <Button
+   474→   474→                variant="outline"
+   475→   475→                size="sm"
+   476→   476→                className="gap-2"
+   477→   477→                onClick={async () => {
+   478→   478→                  const btn = document.getElementById('api-status-btn')
+   479→   479→                  if (btn) btn.textContent = 'Checking...'
+   480→   480→                  try {
+   481→   481→                    const [nebiusRes, tavilyRes] = await Promise.all([
+   482→   482→                      fetch('/api/nebius-test'),
+   483→   483→                      fetch('/api/tavily-test'),
+   484→   484→                    ])
+   485→   485→                    const nebius = await nebiusRes.json()
+   486→   486→                    const tavily = await tavilyRes.json()
+   487→   487→                    const status = document.getElementById('api-status-result')
+   488→   488→                    if (status) {
+   489→   489→                      const nebiusOk = nebius.available ? '✅' : '❌'
+   490→   490→                      const tavilyOk = tavily.available ? '✅' : '❌'
+   491→   491→                      const model = nebius.models?.vlm || 'unknown'
+   492→   492→                      status.innerHTML = `${nebiusOk} Nebius (${model})<br>${tavilyOk} Tavily`
+   493→   493→                      status.classList.remove('hidden')
+   494→   494→                    }
+   495→   495→                    if (btn) btn.textContent = 'Test API'
+   496→   496→                  } catch {
+   497→   497→                    if (btn) btn.textContent = 'Test API'
+   498→   498→                  }
+   499→   499→                }}
+   500→   500→              >
+   501→   501→                <Activity className="h-3.5 w-3.5" />
+   502→   502→                <span id="api-status-btn">Test API</span>
+   503→   503→              </Button>
+   504→   504→              <div id="api-status-result" className="hidden rounded-lg border border-border/40 bg-card/50 px-3 py-1.5 font-mono text-[10px] text-muted-foreground" />
+   505→   505→            </div>
+   506→   506→
+   507→   507→            <UploadDropzone
+   508→   508→              onFileSelected={handleFileSelected}
+   509→   509→              onAnalyze={handleAnalyze}
+   510→   510→              onClear={handleClear}
+   511→   511→              previewUrl={previewUrl}
+   512→   512→              isUploading={false}
+   513→   513→            />
+   514→   514→            <div className="mt-6 flex items-center justify-center">
+   515→   515→              <div className="flex flex-1 max-w-xs items-center">
+   516→   516→                <div className="h-px flex-1 bg-border" />
+   517→   517→                <span className="px-4 text-xs uppercase tracking-wide text-muted-foreground">
+   518→   518→                  or
+   519→   519→                </span>
+   520→   520→                <div className="h-px flex-1 bg-border" />
+   521→   521→              </div>
+   522→   522→            </div>
+   523→   523→            <div className="mt-6 text-center">
+   524→   524→              <Button
+   525→   525→                variant="outline"
+   526→   526→                size="lg"
+   527→   527→                className="gap-2"
+   528→   528→                onClick={handleLoadSeed}
+   529→   529→              >
+   530→   530→                <Brain className="h-4 w-4 text-lime-500" />
+   531→   531→                Load saved results
+   532→   532→              </Button>
+   533→   533→              <p className="mt-2 text-xs text-muted-foreground">
+   534→   534→                Loads pre-built analysis — no API credits used. Test chatbot, PDF, regulations.
+   535→   535→              </p>
+   536→   536→              {/* Upload your own image */}
+   537→   537→              <div className="mt-4">
+   538→   538→                <label className="cursor-pointer rounded-lg border border-lime-500/30 bg-lime-500/5 px-4 py-2 text-sm text-lime-400 transition-all hover:border-lime-500/50 hover:bg-lime-500/10">
+   539→   539→                  + Upload your own image
+   540→   540→                  <input
+   541→   541→                    type="file"
+   542→   542→                    accept="image/*"
+   543→   543→                    className="hidden"
+   544→   544→                    onChange={async (e) => {
+   545→   545→                      const file = e.target.files?.[0]
+   546→   546→                      if (file) {
+   547→   547→                        const jur = jurisdiction === 'CUSTOM' ? (customJurisdiction || 'CZECH') : jurisdiction
+   548→   548→                        const dataUrl = await fileToPngDataUrl(file)
+   549→   549→                        void startAnalysis(
+   550→   550→                          JSON.stringify({ image_base64: dataUrl.split(',')[1], jurisdiction: jur }),
+   551→   551→                          dataUrl,
+   552→   552→                        )
+   553→   553→                      }
+   554→   554→                    }}
+   555→   555→                  />
+   556→   556→                </label>
+   557→   557→              </div>
+   558→   558→              <p className="mt-2 text-[10px] text-muted-foreground/50">
+   559→   559→                Upload any photo — it will be analyzed with real AI via Nebius Token Factory.
+   560→   560→              </p>
+   561→   561→            </div>
+   562→   562→          </section>
+   563→   563→        )}
+   564→   564→
+   565→   565→        {view === 'processing' && (
+   566→   566→          <section className="mx-auto max-w-6xl px-4 py-12">
+   567→   567→            <div className="mb-8">
+   568→   568→              <h1 className="font-mono text-3xl font-bold tracking-tight">
+   569→   569→                {isPosting ? 'Connecting to Nebius...' : 'Analyzing your photo'}
+   570→   570→              </h1>
+   571→   571→              <p className="mt-2 text-sm text-muted-foreground">
+   572→   572→                {isPosting
+   573→   573→                  ? 'Sending image to Nebius Token Factory for VLM analysis via Nemotron...'
+   574→   574→                  : 'Watch Nemotron 3 Ultra plan, the VLM detect hazards, and the report synthesize in real time.'}
+   575→   575→              </p>
+   576→   576→            </div>
+   577→   577→            {isPosting ? (
+   578→   578→              <div className="flex flex-col items-center justify-center gap-4 py-20">
+   579→   579→                <Loader2 className="h-10 w-10 animate-spin text-lime-500" />
+   580→   580→                <span className="hazsight-readout text-sm text-muted-foreground">
+   581→   581→                  {'// awaiting response from api.tokenfactory.nebius.com'}
+   582→   582→                </span>
+   583→   583→              </div>
+   584→   584→            ) : (
+   585→   585→              <ProcessingView
+   586→   586→                previewUrl={previewUrl}
+   587→   587→                events={events}
+   588→   588→                isLive={isLive}
+   589→   589→              />
+   590→   590→            )}
+   591→   591→          </section>
+   592→   592→        )}
+   593→   593→
+   594→   594→        {view === 'monitoring' && (
+   595→   595→          <section className="mx-auto max-w-6xl px-4 py-12">
+   596→   596→            <MonitoringView
+   597→   597→              onJobSelect={handleJobSelectFromMonitoring}
+   598→   598→              onUploadClick={handleUploadClick}
+   599→   599→            />
+   600→   600→          </section>
+   601→   601→        )}
+   602→   602→
+   603→   603→        {view === 'error' && (
+   604→   604→          <section className="mx-auto max-w-3xl px-4 py-12">
+   605→   605→            <Card className="border-red-500/30">
+   606→   606→              <CardHeader>
+   607→   607→                <CardTitle className="flex items-center gap-2 text-red-500">
+   608→   608→                  <AlertTriangle className="h-5 w-5" />
+   609→   609→                  Analysis Failed
+   610→   610→                </CardTitle>
+   611→   611→              </CardHeader>
+   612→   612→              <CardContent className="space-y-4">
+   613→   613→                <div className="relative rounded-lg border border-red-500/20 bg-red-500/5 p-3">
+   614→   614→                  <div className="mb-2 flex items-center justify-between gap-2">
+   615→   615→                    <span className="font-mono text-[10px] uppercase tracking-wide text-red-400/60">
+   616→   616→                      {'// error details'}
+   617→   617→                    </span>
+   618→   618→                    <button
+   619→   619→                      type="button"
+   620→   620→                      onClick={() => {
+   621→   621→                        const errText = error || 'An unknown error occurred during analysis.'
+   622→   622→                        try {
+   623→   623→                          navigator.clipboard.writeText(errText)
+   624→   624→                        } catch {
+   625→   625→                          const ta = document.createElement('textarea')
+   626→   626→                          ta.value = errText
+   627→   627→                          ta.style.position = 'fixed'
+   628→   628→                          ta.style.opacity = '0'
+   629→   629→                          document.body.appendChild(ta)
+   630→   630→                          ta.focus()
+   631→   631→                          ta.select()
+   632→   632→                          try { document.execCommand('copy') } catch {}
+   633→   633→                          document.body.removeChild(ta)
+   634→   634→                        }
+   635→   635→                        setCopied(true)
+   636→   636→                        setTimeout(() => setCopied(false), 2000)
+   637→   637→                      }}
+   638→   638→                      className="relative z-10 flex items-center gap-1 rounded-md border border-border/40 bg-card px-2 py-1 font-mono text-[10px] text-muted-foreground transition-all hover:border-lime-500/30 hover:text-lime-400 cursor-pointer"
+   639→   639→                    >
+   640→   640→                      {copied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+   641→   641→                      {copied ? 'Copied!' : 'Copy'}
+   642→   642→                    </button>
+   643→   643→                  </div>
+   644→   644→                  <pre className="max-h-96 overflow-y-auto whitespace-pre-wrap break-all rounded-md bg-black/40 p-3 font-mono text-[10px] leading-relaxed text-red-400">
+   645→   645→                    {error || 'An unknown error occurred during analysis.'}
+   646→   646→                  </pre>
+   647→   647→                </div>
+   648→   648→                <div className="flex flex-wrap gap-2">
+   649→   649→                  <Button onClick={handleReset} className="gap-2">
+   650→   650→                    <RotateCcw className="h-4 w-4" />
+   651→   651→                    Try again
+   652→   652→                  </Button>
+   653→   653→                  <Button variant="outline" onClick={handleBackToHome}>
+   654→   654→                    Back to home
+   655→   655→                  </Button>
+   656→   656→                  <Button
+   657→   657→                    variant="outline"
+   658→   658→                    className="gap-2"
+   659→   659→                    onClick={() => window.open('/api/models', '_blank')}
+   660→   660→                  >
+   661→   661→                    <Activity className="h-4 w-4" />
+   662→   662→                    Check available models
+   663→   663→                  </Button>
+   664→   664→                </div>
+   665→   665→                <div className="rounded-md border border-lime-500/20 bg-lime-500/5 p-3 text-xs text-muted-foreground">
+   666→   666→                  <span className="font-mono text-lime-400">{'// tip: '}</span>
+   667→   667→                  If the error says &quot;model does not exist&quot;, visit{' '}
+   668→   668→                  <code className="rounded bg-muted px-1 font-mono text-[10px] text-lime-400">/api/models</code>{' '}
+   669→   669→                  to see which models are available on Nebius Token Factory. Then update the{' '}
+   670→   670→                  <code className="rounded bg-muted px-1 font-mono text-[10px] text-lime-400">NEBIUS_VLM_MODEL</code>{' '}
+   671→   671→                  env var on Vercel.
+   672→   672→                </div>
+   673→   673→              </CardContent>
+   674→   674→            </Card>
+   675→   675→          </section>
+   676→   676→        )}
+   677→   677→
+   678→   678→        {view === 'results' && result && (
+   679→   679→          <section className="mx-auto max-w-6xl px-4 py-12">
+   680→   680→            <ResultsView result={result} events={events} onReset={handleReset} />
+   681→   681→          </section>
+   682→   682→        )}
+   683→   683→      </main>
+   684→   684→
+   685→   685→      {/* Sticky footer — terminal style */}
+   686→   686→      <footer className="mt-auto border-t border-border/40 bg-muted/20">
+   687→   687→        <div className="absolute inset-0 -z-10 hazsight-grid-bg opacity-30" aria-hidden />
+   688→   688→        <div className="mx-auto max-w-6xl px-4 py-10">
+   689→   689→          <div className="flex flex-col items-start justify-between gap-6 md:flex-row">
+   690→   690→            <div className="max-w-md">
+   691→   691→              <div className="mb-2 flex items-center gap-2">
+   692→   692→                <span className="hazsight-readout text-sm font-bold tracking-tight text-lime-400">Hazsight</span>
+   693→   693→                <span className="hazsight-readout text-[10px] text-muted-foreground">
+   694→   694→                  v0.1.0
+   695→   695→                </span>
+   696→   696→              </div>
+   697→   697→              <p className="text-xs leading-relaxed text-muted-foreground">
+   698→   698→                <span className="hazsight-readout text-lime-400/60">{'// '}</span>
+   699→   699→                AI safety inspector · NVIDIA Nemotron on Nebius Token Factory ·
+   700→   700→                Built by Team DAMR58H for Nebius x NVIDIA Global AI Hackathon.
+   701→   701→              </p>
+   702→   702→            </div>
+   703→   703→            <div className="flex flex-col gap-2 text-sm">
+   704→   704→              <a
+   705→   705→                href="https://github.com/SimonCurda/Hazsight"
+   706→   706→                target="_blank"
+   707→   707→                rel="noopener noreferrer"
+   708→   708→                className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-lime-400"
+   709→   709→              >
+   710→   710→                <Github className="h-4 w-4" />
+   711→   711→                GitHub repository
+   712→   712→                <ExternalLink className="h-3 w-3" />
+   713→   713→              </a>
+   714→   714→              <a
+   715→   715→                href="https://nebiusglobalaihackathon.devpost.com"
+   716→   716→                target="_blank"
+   717→   717→                rel="noopener noreferrer"
+   718→   718→                className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-lime-400"
+   719→   719→              >
+   720→   720→                <ExternalLink className="h-4 w-4" />
+   721→   721→                Hackathon page
+   722→   722→              </a>
+   723→   723→            </div>
+   724→   724→          </div>
+   725→   725→          <div className="mt-8 border-t border-border/40 pt-6">
+   726→   726→            <p className="hazsight-readout text-[10px] text-muted-foreground">
+   727→   727→              <span className="text-emerald-400/70">{'// Compliance: '}</span>
+   728→   728→              MIT licensed · Runs on Nebius Token Factory · Uses NVIDIA Nemotron open-source models · Best Apps &amp; Agents track
+   729→   729→            </p>
+   730→   730→          </div>
+   731→   731→        </div>
+   732→   732→      </footer>
+   733→   733→    </div>
+   734→   734→  )
+   735→   735→}
+   736→   736→

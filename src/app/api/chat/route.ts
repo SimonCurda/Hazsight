@@ -119,7 +119,7 @@ IMPORTANT: Do NOT show your reasoning process, thinking steps, or chain-of-thoug
       )
       if (results.length > 0) {
         tavilyContext = '\n\nAdditional regulation search results:\n' +
-          results.map(r => `- ${r.title} (${r.url})\n  ${r.content?.slice(0, 200)}`).join('\n')
+          results.map(r => `- ${r.title} (${r.url})\n  ${(r.clean_content || r.content)?.slice(0, 200)}`).join('\n')
       }
     }
 
