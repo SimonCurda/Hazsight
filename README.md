@@ -182,8 +182,9 @@ This project satisfies the [Nebius x NVIDIA Global AI Hackathon](https://nebiusg
 
 | Member | Role |
 |---|---|
-| **Šimon Čurda** | Tech lead — frontend, API, AI integration, demo video |
+| **Šimon Čurda** | Tech lead — frontend, backend, API, AI integration, demo video |
 | **Jan "Honza" Korbel** | Infrastructure — Nebius + Tavily accounts, API setup |
+| **Adam Říha** | Backend — tools + integration |
 | **Nikol Picková** | Design — UI design |
 | **David Jindra** | Architecture — Python backend concept + repo setup |
 | **Matěj Duček** | QA + research |
