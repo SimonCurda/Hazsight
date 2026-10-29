@@ -19,7 +19,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ModeToggle } from '@/components/mode-toggle'
 import AboutTeamCard from '@/components/hazsight/about-team-card'
 import { LandingView } from '@/components/hazsight/landing-view'
 import { UploadDropzone } from '@/components/hazsight/upload-dropzone'
@@ -328,7 +327,6 @@ export default function Home() {
                 <Github className="h-4 w-4" />
               </a>
             </Button>
-            <ModeToggle />
           </nav>
         </div>
         {/* Tech divider line */}
