@@ -182,7 +182,7 @@ This project satisfies the [Nebius x NVIDIA Global AI Hackathon](https://nebiusg
 
 | Member | Role |
 |---|---|
-| **Šimon Čurda** | Tech lead — Next.js frontend + agent orchestration + Nebius routing |
+| **Šimon Čurda** | Tech lead — Next.js frontend + agent orchestration + Nebius routing + demo video |
 | **Jan "Honza" Korbel** | ML/AI lead — Nemotron prompt design + hazard evaluation |
 | **Adam Říha** | Backend — Tavily integration + custom tools |
 | **Nikol Picková** | Design/UX/strategy — UI design + demo video + Devpost |
