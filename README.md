@@ -10,40 +10,19 @@ Hazsight analyzes images of workspaces, warehouses, and industrial sites to dete
 
 ## Quick Start
 
-### Option 1: Try the live demo (no setup needed)
+**Live demo**: [https://hazsight-gamma.vercel.app](https://hazsight-gamma.vercel.app) — click "Initiate scan" → "Load saved results" to explore without API keys.
 
-Go to [https://hazsight-gamma.vercel.app](https://hazsight-gamma.vercel.app), click **"Initiate scan"**, pick a jurisdiction, then click **"Load saved results"** to see the full results without spending API credits. Or click **"+ Upload your own image"** to run real AI analysis.
-
-### Option 2: Run locally
+Or run locally:
 
 ```bash
 git clone https://github.com/SimonCurda/Hazsight.git
 cd Hazsight
 npm install
-cp .env.example .env.local
+cp .env.example .env.local   # add NEBIUS_API_KEY + TAVILY_API_KEY for real AI
 npm run dev
-# Open http://localhost:3000
 ```
 
-Without API keys, the app uses mock data. Click **"Load saved results"** to explore the full UI.
-
-### Option 3: Run with real AI
-
-Add API keys to `.env.local`:
-
-```bash
-NEBIUS_API_KEY=your-key-from-tokenfactory.nebius.com
-TAVILY_API_KEY=your-key-from-tavily.com
-DATABASE_URL="file:./db/custom.db"
-```
-
-Now upload any photo — real VLM analysis via Nemotron + real Tavily regulation search.
-
-### Deploy to Vercel
-
-1. Import the repo on [vercel.com](https://vercel.com)
-2. Set env vars: `NEBIUS_API_KEY`, `TAVILY_API_KEY`, `DATABASE_URL`
-3. Deploy — auto-detects Next.js
+Open [http://localhost:3000](http://localhost:3000). Without API keys, the app uses mock data — click "Load saved results" to see the full UI (chatbot, PDF, regulations). With API keys, upload any photo for real VLM analysis via Nemotron + Tavily regulation search.
 
 ---
 
