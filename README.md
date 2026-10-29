@@ -4,7 +4,46 @@
 
 **Live demo**: [https://hazsight-gamma.vercel.app](https://hazsight-gamma.vercel.app)
 
-Hazsight analyzes images of workspaces, warehouses, and industrial sites to detect occupational hazards — blocked emergency exits, flammable materials near heat sources, trip hazards, missing PPE, fire risks — then marks them on the image with severity-colored bounding boxes, overlays a risk heatmap, searches for relevant safety regulations via Tavily, and generates a downloadable PDF report.
+Hazsight analyzes images of workspaces, warehouses, and industrial sites to detect occupational hazards — blocked emergency exits, flammable materials near heat sources, trip hazards, missing PPE, fire risks — then marks them on the image with severity-colored bounding boxes, searches for relevant safety regulations via Tavily, and generates a downloadable PDF report.
+
+---
+
+## Quick Start
+
+### Option 1: Try the live demo (no setup needed)
+
+Go to [https://hazsight-gamma.vercel.app](https://hazsight-gamma.vercel.app), click **"Initiate scan"**, pick a jurisdiction, then click **"Load saved results"** to see the full results without spending API credits. Or click **"+ Upload your own image"** to run real AI analysis.
+
+### Option 2: Run locally
+
+```bash
+git clone https://github.com/SimonCurda/Hazsight.git
+cd Hazsight
+npm install
+cp .env.example .env.local
+npm run dev
+# Open http://localhost:3000
+```
+
+Without API keys, the app uses mock data. Click **"Load saved results"** to explore the full UI.
+
+### Option 3: Run with real AI
+
+Add API keys to `.env.local`:
+
+```bash
+NEBIUS_API_KEY=your-key-from-tokenfactory.nebius.com
+TAVILY_API_KEY=your-key-from-tavily.com
+DATABASE_URL="file:./db/custom.db"
+```
+
+Now upload any photo — real VLM analysis via Nemotron + real Tavily regulation search.
+
+### Deploy to Vercel
+
+1. Import the repo on [vercel.com](https://vercel.com)
+2. Set env vars: `NEBIUS_API_KEY`, `TAVILY_API_KEY`, `DATABASE_URL`
+3. Deploy — auto-detects Next.js
 
 ---
 
@@ -129,38 +168,6 @@ Without `include_domains`, Tavily returns a random mix of US/EU/CZ results (what
 - **Tavily API** — live web search with jurisdiction-aware `include_domains`
 
 ---
-
-## Quickstart
-
-### Run locally (mock mode — no API key needed)
-
-```bash
-git clone https://github.com/SimonCurda/Hazsight.git
-cd Hazsight
-npm install
-cp .env.example .env.local
-npm run dev
-# Open http://localhost:3000
-```
-
-Without `NEBIUS_API_KEY`, the app uses **mock data**. Click **"Try with a demo image"** to see the full flow.
-
-### With real AI
-
-Edit `.env.local`:
-```bash
-NEBIUS_API_KEY=your-key-from-tokenfactory.nebius.com
-TAVILY_API_KEY=your-key-from-tavily.com
-DATABASE_URL="file:./db/custom.db"
-```
-
-Now the app calls **real Nebius Token Factory** (VLM + Nemotron Ultra) + **real Tavily** (live regulation search with jurisdiction-aware domains).
-
-### Deploy to Vercel
-
-1. Import the repo on [vercel.com](https://vercel.com)
-2. Set environment variables: `NEBIUS_API_KEY`, `TAVILY_API_KEY`, `DATABASE_URL`
-3. Deploy — Vercel auto-detects Next.js
 
 ---
 
