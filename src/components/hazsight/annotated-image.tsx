@@ -14,6 +14,7 @@ interface AnnotatedImageProps {
   onHazardClick?: (hazardId: string) => void
   selectedHazardId?: string | null
   showBoxes?: boolean
+  onImageClick?: () => void
 }
 
 export function AnnotatedImage({
@@ -22,18 +23,28 @@ export function AnnotatedImage({
   onHazardClick,
   selectedHazardId,
   showBoxes = true,
+  onImageClick,
 }: AnnotatedImageProps) {
   const visibleHazards = hazards.filter(
     (h) => h.bounding_box.width > 0 && h.bounding_box.height > 0,
   )
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-border bg-black">
+    <div className="group relative overflow-hidden rounded-xl border border-border bg-black">
       <img
         src={imageUrl}
         alt="Analyzed scene with detected hazards"
         className="block max-h-[600px] w-full object-contain"
+        onClick={onImageClick}
+        style={{ cursor: onImageClick ? 'zoom-in' : 'default' }}
       />
+      {/* Zoom hint — appears on hover */}
+      {onImageClick && (
+        <div className="pointer-events-none absolute right-2 top-2 z-40 flex items-center gap-1 rounded-md bg-black/70 px-2 py-1 font-mono text-[9px] text-lime-400 opacity-0 backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100">
+          <AlertTriangle className="h-2.5 w-2.5" />
+          Click to inspect
+        </div>
+      )}
       {/* Disclaimer for seed/demo results (no bounding boxes) */}
       {visibleHazards.length === 0 && (
         <div className="absolute inset-0 flex items-end justify-center bg-black/40 p-4">

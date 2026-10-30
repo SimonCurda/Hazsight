@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { motion } from 'framer-motion'
-import { Download, RotateCcw, ShieldAlert, FileText, Brain, ChevronDown, Keyboard, Gavel, ExternalLink, Search, Scan } from 'lucide-react'
+import { Download, RotateCcw, ShieldAlert, FileText, Brain, ChevronDown, Keyboard, Gavel, ExternalLink, Search, Scan, Maximize2, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -34,6 +34,8 @@ export function ResultsView({ result, events, onReset }: ResultsViewProps) {
   const [hintVisible, setHintVisible] = React.useState(true)
   // Bounding box overlay toggle — Nemotron 3.5 Super VL now returns real boxes!
   const [showBoxes, setShowBoxes] = React.useState(true)
+  // Image zoom modal
+  const [imageZoomOpen, setImageZoomOpen] = React.useState(false)
   // Auto-disable the overlay if no hazards have a real bounding box
   const hasBoxes = result.hazards.some(
     (h) => h.bounding_box.width > 0 && h.bounding_box.height > 0,
@@ -57,6 +59,7 @@ export function ResultsView({ result, events, onReset }: ResultsViewProps) {
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return
 
       if (e.key === 'Escape') {
+        if (imageZoomOpen) { setImageZoomOpen(false); return }
         e.preventDefault()
         onReset()
       } else if (e.key >= '1' && e.key <= '9') {
@@ -71,7 +74,7 @@ export function ResultsView({ result, events, onReset }: ResultsViewProps) {
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [sortedHazards, onReset])
+  }, [sortedHazards, onReset, imageZoomOpen])
 
   // Whether Tavily ran live (real API call) or in mock mode (pre-written citations).
   // Set server-side in the job result based on whether TAVILY_API_KEY was set.
@@ -219,20 +222,30 @@ export function ResultsView({ result, events, onReset }: ResultsViewProps) {
             <h3 className="font-mono text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               Annotated Image
             </h3>
-            {hasBoxes && (
-              <label className="flex cursor-pointer select-none items-center gap-2 rounded-lg border border-border/60 bg-card/40 px-3 py-1.5 transition-colors hover:border-lime-500/40 hover:bg-lime-500/5">
-                <Scan className="h-3.5 w-3.5 text-lime-500" />
-                <span className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
-                  Show boxes
-                </span>
-                <Switch
-                  checked={showBoxes}
-                  onCheckedChange={setShowBoxes}
-                  className="scale-90 data-[state=checked]:bg-lime-500"
-                  aria-label="Toggle bounding box overlay"
-                />
-              </label>
-            )}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setImageZoomOpen(true)}
+                className="flex items-center gap-1 rounded-lg border border-border/60 bg-card/40 px-2.5 py-1.5 text-muted-foreground transition-colors hover:border-lime-500/40 hover:bg-lime-500/5 hover:text-lime-400"
+                aria-label="Open image in fullscreen"
+              >
+                <Maximize2 className="h-3.5 w-3.5" />
+                <span className="font-mono text-[10px] uppercase tracking-wide">Zoom</span>
+              </button>
+              {hasBoxes && (
+                <label className="flex cursor-pointer select-none items-center gap-2 rounded-lg border border-border/60 bg-card/40 px-3 py-1.5 transition-colors hover:border-lime-500/40 hover:bg-lime-500/5">
+                  <Scan className="h-3.5 w-3.5 text-lime-500" />
+                  <span className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+                    Show boxes
+                  </span>
+                  <Switch
+                    checked={showBoxes}
+                    onCheckedChange={setShowBoxes}
+                    className="scale-90 data-[state=checked]:bg-lime-500"
+                    aria-label="Toggle bounding box overlay"
+                  />
+                </label>
+              )}
+            </div>
           </div>
           <AnnotatedImage
             imageUrl={result.image_url}
@@ -240,10 +253,15 @@ export function ResultsView({ result, events, onReset }: ResultsViewProps) {
             onHazardClick={handleHazardClick}
             selectedHazardId={selectedHazardId}
             showBoxes={showBoxes}
+            onImageClick={() => setImageZoomOpen(true)}
           />
-          {hasBoxes && (
+          {hasBoxes ? (
             <p className="text-[10px] text-muted-foreground/60">
-              {'// Bounding boxes returned by Nemotron 3.5 Super VL — toggle to compare raw vs annotated'}
+              {'// Bounding boxes from Nemotron 3.5 Super VL — note: the VLM does not always return spatial coordinates reliably. Toggle to compare raw vs annotated.'}
+            </p>
+          ) : (
+            <p className="text-[10px] text-muted-foreground/60">
+              {'// No bounding boxes returned for this scan — the VLM does not always return spatial coordinates. Click image to zoom.'}
             </p>
           )}
         </div>
@@ -397,6 +415,34 @@ export function ResultsView({ result, events, onReset }: ResultsViewProps) {
             </div>
           </CollapsibleContent>
         </Collapsible>
+      )}
+
+      {/* Image zoom — fullscreen overlay, click or Esc to close */}
+      {imageZoomOpen && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm"
+          onClick={() => setImageZoomOpen(false)}
+        >
+          <button
+            className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+            onClick={() => setImageZoomOpen(false)}
+            aria-label="Close zoom"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <div className="relative max-h-full max-w-full p-4" onClick={(e) => e.stopPropagation()}>
+            <AnnotatedImage
+              imageUrl={result.image_url}
+              hazards={result.hazards}
+              onHazardClick={handleHazardClick}
+              selectedHazardId={selectedHazardId}
+              showBoxes={showBoxes}
+            />
+          </div>
+          <p className="absolute bottom-4 left-0 right-0 text-center font-mono text-[10px] text-muted-foreground">
+            {'// Click anywhere or press Esc to close'}
+          </p>
+        </div>
       )}
     </motion.div>
   )
