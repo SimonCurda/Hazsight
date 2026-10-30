@@ -166,7 +166,7 @@ export function LandingView({ onUploadClick }: LandingViewProps) {
               MIT licensed · No signup required · Demo runs without API key
             </p>
 
-          {/* NVIDIA + Nebius badges — official logos with proper clear space */}
+          {/* NVIDIA + Nebius badges — official logos, same-size boxes */}
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-6">
             {/* NVIDIA — official horizontal logo, white version for dark bg */}
             <div className="flex items-center gap-4 rounded-lg border border-lime-500/30 bg-lime-500/5 px-6 py-3">
@@ -176,9 +176,9 @@ export function LandingView({ onUploadClick }: LandingViewProps) {
               </span>
             </div>
             <span className="text-muted-foreground/40 text-xs">+</span>
-            <div className="flex items-center gap-2 rounded-lg border border-lime-500/30 bg-lime-500/5 px-4 py-2">
-              <img src="/nebius-logo.svg" alt="Nebius" className="h-6" />
-              <span className="hazsight-readout text-[10px] text-muted-foreground border-l border-lime-500/20 pl-2">
+            <div className="flex items-center gap-4 rounded-lg border border-lime-500/30 bg-lime-500/5 px-6 py-3">
+              <img src="/nebius-logo.svg" alt="Nebius" className="h-8 w-auto" />
+              <span className="hazsight-readout text-[11px] text-muted-foreground border-l border-lime-500/20 pl-4">
                 Token Factory
               </span>
             </div>
