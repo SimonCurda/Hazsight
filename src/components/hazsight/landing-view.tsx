@@ -166,21 +166,21 @@ export function LandingView({ onUploadClick }: LandingViewProps) {
               MIT licensed · No signup required · Demo runs without API key
             </p>
 
-          {/* NVIDIA + Nebius badges — official logos, same-size boxes.
-              NVIDIA clear space: padding ≥ height of "n" in wordmark (~12px at h-8).
-              Using py-5 (20px) + px-8 (32px) for comfortable margin. */}
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-6">
-            {/* NVIDIA — official horizontal logo, white version for dark bg */}
-            <div className="flex items-center gap-5 rounded-lg border border-lime-500/30 bg-lime-500/5 px-8 py-5">
-              <img src="/nvidia-logo-official.png" alt="NVIDIA" className="h-8 w-auto" />
-              <span className="hazsight-readout text-[11px] text-muted-foreground border-l border-lime-500/20 pl-5">
+          {/* NVIDIA + Nebius badges — official logos.
+              NVIDIA vertical format is the PREFERRED format per brand guidelines.
+              Clear space: padding ≥ height of "n" in wordmark. */}
+          <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-6">
+            {/* NVIDIA — official vertical logo (preferred format), white version for dark bg */}
+            <div className="flex flex-col items-center gap-3 rounded-lg border border-lime-500/30 bg-lime-500/5 px-8 py-6">
+              <img src="/nvidia-logo-vertical.png" alt="NVIDIA" className="h-12 w-auto" />
+              <span className="hazsight-readout text-[11px] text-muted-foreground border-t border-lime-500/20 pt-3">
                 Nemotron · Llama 3.2 Vision
               </span>
             </div>
             <span className="text-muted-foreground/40 text-xs">+</span>
-            <div className="flex items-center gap-5 rounded-lg border border-lime-500/30 bg-lime-500/5 px-8 py-5">
-              <img src="/nebius-logo.svg" alt="Nebius" className="h-8 w-auto" />
-              <span className="hazsight-readout text-[11px] text-muted-foreground border-l border-lime-500/20 pl-5">
+            <div className="flex flex-col items-center gap-3 rounded-lg border border-lime-500/30 bg-lime-500/5 px-8 py-6">
+              <img src="/nebius-logo.svg" alt="Nebius" className="h-12 w-auto" />
+              <span className="hazsight-readout text-[11px] text-muted-foreground border-t border-lime-500/20 pt-3">
                 Token Factory
               </span>
             </div>
