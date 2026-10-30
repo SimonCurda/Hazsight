@@ -166,11 +166,12 @@ export function LandingView({ onUploadClick }: LandingViewProps) {
               MIT licensed · No signup required · Demo runs without API key
             </p>
 
-          {/* NVIDIA + Nebius badges */}
-          <div className="mt-8 flex items-center justify-center gap-4">
-            <div className="flex items-center gap-2 rounded-lg border border-lime-500/30 bg-lime-500/5 px-3 py-1.5">
-              <img src="/nvidia-logo-green.svg" alt="NVIDIA" className="h-6" />
-              <span className="hazsight-readout text-[10px] text-muted-foreground border-l border-lime-500/20 pl-2">
+          {/* NVIDIA + Nebius badges — official logos with proper clear space */}
+          <div className="mt-8 flex items-center justify-center gap-6">
+            {/* NVIDIA — official horizontal logo, white version for dark bg */}
+            <div className="flex items-center gap-3 rounded-lg border border-lime-500/30 bg-lime-500/5 px-5 py-2.5">
+              <img src="/nvidia-logo-official.png" alt="NVIDIA" className="h-5 w-auto" />
+              <span className="hazsight-readout text-[10px] text-muted-foreground border-l border-lime-500/20 pl-3">
                 Nemotron · Llama 3.2 Vision
               </span>
             </div>
