@@ -49,6 +49,7 @@ Hazsight uses a **tiered model architecture** — different NVIDIA models for di
 |---|---|---|
 | **Nemotron 3.5 Super VL** | Vision-Language | Scans the photo for hazards, returns structured JSON: category, severity, bounding box, description, recommendation, confidence, fire origin point, fire severity level |
 | **Nemotron 3 Ultra (550B)** | Reasoning | Plans the 5-step analysis pipeline, validates VLM output as JSON, cross-references regulations, synthesizes the final report with safety score |
+| **Nemotron 3.5 Lightning** | Chatbot | Powers the inline Q&A assistant — answers questions about hazards, regulations, and fixes, with Tavily regulation lookup for legal questions |
 
 ### The pipeline
 
@@ -103,7 +104,8 @@ Without `include_domains`, Tavily returns a random mix of US/EU/CZ results (what
 ### Core analysis
 - **Upload any image** — JPEG, PNG, WebP (client-side canvas converts to PNG + resizes)
 - **Live agent-trace timeline** — watch Nemotron plan, VLM detect hazards, Tavily search regulations, report synthesize
-- **Annotated image** — severity-colored bounding boxes + risk heatmap overlay (toggleable)
+- **Annotated image** — severity-colored bounding boxes with "Show boxes" toggle (note: the VLM does not always return spatial coordinates reliably)
+- **Zoom inspector** — click the image to open fullscreen overlay for detailed inspection
 - **Risk list** — sorted by severity, each with category, description, confidence %, recommendation
 - **Regulation citations** — real safety laws fetched via Tavily, jurisdiction-aware, with LIVE/MOCK badge
 - **PDF download** — 2-page report: hazards + regulation citations, works on Vercel
@@ -120,12 +122,6 @@ Without `include_domains`, Tavily returns a random mix of US/EU/CZ results (what
 - **Fire alert banner** — instant alert when any scan detects fire
 - **Auto-refresh** — polls every 10 seconds for live monitoring
 - **API-first** — `POST /api/analyze` accepts `image_url` for cron-job/camera integration
-
-### Developer API
-- **6 REST endpoints** — `POST /api/analyze`, `GET /api/jobs`, `GET /api/jobs/:id`, `GET /api/reports/:id`, `GET /api/tavily-test`, `GET /api/nebius-test`
-- **API documentation** — terminal-style docs on the landing page with curl examples
-- **Debug panel** — floating bug icon showing env state, API key status, last analysis trace, Tavily citations
-- **Key verification** — `/api/nebius-test` and `/api/tavily-test` endpoints to verify keys before deploying
 
 ### UI/UX
 - **NVIDIA-green aesthetic** — dark mode, lime-500 palette, code background with typing animation
@@ -148,21 +144,18 @@ Without `include_domains`, Tavily returns a random mix of US/EU/CZ results (what
 
 ---
 
----
-
 ## API endpoints
 
 | Method | Path | Description |
 |---|---|---|
 | `POST` | `/api/analyze` | Submit image for VLM analysis (accepts `image_url` or `image_base64` + `jurisdiction`) |
 | `POST` | `/api/reports/generate` | Generate PDF from result data (works on Vercel) |
+| `POST` | `/api/chat` | Chatbot Q&A powered by Nemotron 3.5 Lightning + Tavily |
 | `GET` | `/api/jobs` | List all analysis jobs |
 | `GET` | `/api/jobs/:id` | Get job status + result |
 | `GET` | `/api/jobs/:id/trace` | Agent reasoning trace events |
 | `GET` | `/api/nebius-test` | Verify Nebius API key + model names |
 | `GET` | `/api/tavily-test` | Verify Tavily API key |
-| `GET` | `/api/models` | List all available models on Nebius Token Factory |
-| `GET` | `/api/debug` | Full debug info (env, jobs, trace events) |
 
 ---
 
@@ -171,9 +164,9 @@ Without `include_domains`, Tavily returns a random mix of US/EU/CZ results (what
 This project satisfies the [Nebius x NVIDIA Global AI Hackathon](https://nebiusglobalaihackathon.devpost.com/) rules:
 
 - **Runs on Nebius Token Factory**: all inference via `https://api.tokenfactory.nebius.com/v1/`
-- **Uses NVIDIA open-source models**: Nemotron 3.5 Super VL + Nemotron 3 Ultra (550B)
+- **Uses NVIDIA open-source models**: Nemotron 3.5 Super VL + Nemotron 3 Ultra (550B) + Nemotron 3.5 Lightning
 - **Track**: Best Apps & Agents
-- **Best Use of Tavily** ($3,000 bonus): jurisdiction-aware regulation search with `include_domains` on official legal databases
+- **Best Use of Tavily** ($3,000 bonus prize): jurisdiction-aware regulation search with `include_domains` on official legal databases (zakonyprolidi.cz, osha.gov, legislation.gov.uk, etc.)
 - **MIT licensed**
 
 ---
